@@ -169,6 +169,16 @@ impl<'a> Music<'a> {
         parse::library_tracks(&self.browse_authed(json!({"continuation": check_token(continuation)?})).await?)
     }
 
+    /// `saved_tracks` plus what the page held before the non-track rows were dropped.
+    pub async fn saved_tracks_tally(&self) -> Result<(Page<Track>, RowTally), Error> {
+        parse::library_tracks_tally(&self.browse_authed(json!({"browseId": "FEmusic_liked_videos"})).await?)
+    }
+
+    /// `saved_tracks_more` plus the row tally of that page.
+    pub async fn saved_tracks_more_tally(&self, continuation: &str) -> Result<(Page<Track>, RowTally), Error> {
+        parse::library_tracks_tally(&self.browse_authed(json!({"continuation": check_token(continuation)?})).await?)
+    }
+
     /// Saved playlists.
     pub async fn saved_playlists(&self) -> Result<Page<PlaylistSummary>, Error> {
         parse::library_playlists(&self.browse_authed(json!({"browseId": "FEmusic_liked_playlists"})).await?)

@@ -38,6 +38,19 @@ pub enum TrackKind {
     Unknown,
 }
 
+/// What one library page held, counted before the non-track rows are dropped. For diagnosing short imports.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RowTally {
+    /// Every `musicResponsiveListItemRenderer` on the page.
+    pub rows: usize,
+    /// Rows that became a `Track`.
+    pub tracks: usize,
+    /// Rows with no video id anywhere they could carry one (unavailable, removed or private songs, usually).
+    pub no_id: usize,
+    /// Rows with a video id that were still not tracks (podcast episodes, livestreams, other kinds).
+    pub other: usize,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Track {
     /// Validated 11-character video id.

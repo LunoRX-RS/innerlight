@@ -396,6 +396,34 @@ pub(crate) fn element_item(e: &Value) -> Option<Item> {
     }
 }
 
+/// Counts the rows under `v` the way `tracks_in` reads them. The video-id lookup mirrors `list_item`'s, so `no_id`
+/// means the row had no id where a track would have carried one.
+pub(crate) fn tally_rows(v: &Value) -> RowTally {
+    let mut t = RowTally::default();
+    for r in jsonx::find_all(v, "musicResponsiveListItemRenderer") {
+        t.rows += 1;
+        match list_item(r) {
+            Some(Item::Track(_)) => t.tracks += 1,
+            _ => {
+                let has_id = [
+                    jsonx::get(r, "playlistItemData.videoId"),
+                    jsonx::get(r, "overlay.musicItemThumbnailOverlayRenderer.content.musicPlayButtonRenderer.playNavigationEndpoint.watchEndpoint.videoId"),
+                    jsonx::get(r, "navigationEndpoint.watchEndpoint.videoId"),
+                ]
+                .into_iter()
+                .flatten()
+                .any(|v| v.as_str().is_some_and(|s| !s.is_empty()));
+                if has_id {
+                    t.other += 1;
+                } else {
+                    t.no_id += 1;
+                }
+            }
+        }
+    }
+    t
+}
+
 /// Every track row anywhere under `v`, in document order (non-track rows and skipped media are dropped).
 pub(crate) fn tracks_in(v: &Value) -> Vec<Track> {
     jsonx::find_all(v, "musicResponsiveListItemRenderer")
@@ -507,5 +535,32 @@ mod tests {
         assert_eq!(parse_year("2021"), Some(2021));
         assert_eq!(parse_year("0042"), None);
         assert_eq!(parse_year("20211"), None);
+    }
+}
+
+#[cfg(test)]
+mod tally_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn row(title: &str, video: Option<&str>) -> Value {
+        let mut r = json!({
+            "musicResponsiveListItemRenderer": {
+                "flexColumns": [{"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": title}]}}}]
+            }
+        });
+        if let Some(id) = video {
+            r["musicResponsiveListItemRenderer"]["playlistItemData"] = json!({"videoId": id});
+        }
+        r
+    }
+
+    #[test]
+    fn rows_without_an_id_are_counted_apart_from_tracks() {
+        let page = json!({"contents": [row("Song A", Some("aqz-KE-bpKQ")), row("Unavailable", None)]});
+        let t = tally_rows(&page);
+        assert_eq!(t.rows, 2);
+        assert_eq!(t.no_id, 1);
+        assert_eq!(t.tracks + t.other + t.no_id, t.rows);
     }
 }

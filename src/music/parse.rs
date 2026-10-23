@@ -379,6 +379,12 @@ pub fn library_tracks(v: &Value) -> Result<Page<Track>, Error> {
     track_page(v)
 }
 
+/// `library_tracks` plus the row tally of the same page.
+pub fn library_tracks_tally(v: &Value) -> Result<(Page<Track>, RowTally), Error> {
+    let page = track_page(v)?;
+    Ok((page, item::tally_rows(v)))
+}
+
 /// Saved playlists (a grid of cards). The "new playlist" button and other non-playlist cards are skipped.
 pub fn library_playlists(v: &Value) -> Result<Page<PlaylistSummary>, Error> {
     require_any(v, &["contents", "continuationContents", "onResponseReceivedActions"])?;
