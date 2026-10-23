@@ -424,6 +424,56 @@ pub(crate) fn tally_rows(v: &Value) -> RowTally {
     t
 }
 
+/// Header count and continuation key names of one page. Values are never copied out, only counts and key names.
+pub(crate) fn probe_page(v: &Value) -> PageProbe {
+    let header_count = v.get("header").and_then(header_count_in);
+    let mut keys = Vec::new();
+    collect_continuation_keys(v, "", 0, &mut keys);
+    keys.sort();
+    keys.dedup();
+    keys.truncate(20);
+    PageProbe { header_count, continuation_keys: keys }
+}
+
+fn header_count_in(header: &Value) -> Option<u64> {
+    jsonx::find_all_depth(header, "text", 12).into_iter().find_map(|t| {
+        let line = jsonx::text(t)?;
+        let mut words = line.split_whitespace();
+        let mut prev: Option<&str> = None;
+        for w in words.by_ref() {
+            if matches!(w.trim_end_matches(['.', ',']), "song" | "songs" | "video" | "videos") {
+                let digits: String = prev?.chars().filter(char::is_ascii_digit).collect();
+                return digits.parse().ok().filter(|_| digits.len() <= 12);
+            }
+            prev = Some(w);
+        }
+        None
+    })
+}
+
+fn collect_continuation_keys(v: &Value, path: &str, depth: usize, out: &mut Vec<String>) {
+    if depth > 12 || out.len() >= 40 {
+        return;
+    }
+    match v {
+        Value::Object(map) => {
+            for (k, child) in map {
+                let here = if path.is_empty() { k.clone() } else { format!("{path}.{k}") };
+                if k.contains("ontinuation") {
+                    out.push(here.clone());
+                }
+                collect_continuation_keys(child, &here, depth + 1, out);
+            }
+        }
+        Value::Array(items) => {
+            for child in items {
+                collect_continuation_keys(child, &format!("{path}[]"), depth + 1, out);
+            }
+        }
+        _ => {}
+    }
+}
+
 /// Every track row anywhere under `v`, in document order (non-track rows and skipped media are dropped).
 pub(crate) fn tracks_in(v: &Value) -> Vec<Track> {
     jsonx::find_all(v, "musicResponsiveListItemRenderer")
@@ -562,5 +612,19 @@ mod tally_tests {
         assert_eq!(t.rows, 2);
         assert_eq!(t.no_id, 1);
         assert_eq!(t.tracks + t.other + t.no_id, t.rows);
+    }
+
+    #[test]
+    fn probe_reads_the_header_count_and_continuation_key_names_only() {
+        let page = json!({
+            "header": {"musicHeaderRenderer": {"secondSubtitle": {"runs": [{"text": "547 songs"}]}}},
+            "contents": [{"continuationItemRenderer": {"continuationEndpoint": {"continuationCommand": {"token": "TOKEN_SECRET_VALUE_123"}}}}]
+        });
+        let p = probe_page(&page);
+        assert_eq!(p.header_count, Some(547));
+        assert!(p.continuation_keys.iter().any(|k| k.ends_with("continuationItemRenderer")));
+        assert!(!p.continuation_keys.iter().any(|k| k.contains("TOKEN_SECRET")), "values must never leak");
+        let none = probe_page(&json!({"header": {"text": {"runs": [{"text": "Liked"}]}}}));
+        assert_eq!(none.header_count, None);
     }
 }

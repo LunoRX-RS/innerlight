@@ -380,9 +380,9 @@ pub fn library_tracks(v: &Value) -> Result<Page<Track>, Error> {
 }
 
 /// `library_tracks` plus the row tally of the same page.
-pub fn library_tracks_tally(v: &Value) -> Result<(Page<Track>, RowTally), Error> {
+pub fn library_tracks_tally(v: &Value) -> Result<(Page<Track>, RowTally, PageProbe), Error> {
     let page = track_page(v)?;
-    Ok((page, item::tally_rows(v)))
+    Ok((page, item::tally_rows(v), item::probe_page(v)))
 }
 
 /// Saved playlists (a grid of cards). The "new playlist" button and other non-playlist cards are skipped.

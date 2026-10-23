@@ -51,6 +51,16 @@ pub struct RowTally {
     pub other: usize,
 }
 
+/// Structure of one library page, for diagnosing short reads. Holds the count YouTube prints for itself and the
+/// names (never values) of keys that look like continuations. No ids, titles or tokens.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PageProbe {
+    /// The number in the header line such as "547 songs", when the page has one.
+    pub header_count: Option<u64>,
+    /// Paths to keys containing `ontinuation`, e.g. `contents.….continuationItemRenderer`. Up to 20, depth-limited.
+    pub continuation_keys: Vec<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Track {
     /// Validated 11-character video id.

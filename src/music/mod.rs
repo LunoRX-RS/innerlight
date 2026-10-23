@@ -170,12 +170,15 @@ impl<'a> Music<'a> {
     }
 
     /// `saved_tracks` plus what the page held before the non-track rows were dropped.
-    pub async fn saved_tracks_tally(&self) -> Result<(Page<Track>, RowTally), Error> {
+    pub async fn saved_tracks_tally(&self) -> Result<(Page<Track>, RowTally, PageProbe), Error> {
         parse::library_tracks_tally(&self.browse_authed(json!({"browseId": "FEmusic_liked_videos"})).await?)
     }
 
     /// `saved_tracks_more` plus the row tally of that page.
-    pub async fn saved_tracks_more_tally(&self, continuation: &str) -> Result<(Page<Track>, RowTally), Error> {
+    pub async fn saved_tracks_more_tally(
+        &self,
+        continuation: &str,
+    ) -> Result<(Page<Track>, RowTally, PageProbe), Error> {
         parse::library_tracks_tally(&self.browse_authed(json!({"continuation": check_token(continuation)?})).await?)
     }
 
