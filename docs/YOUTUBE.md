@@ -23,6 +23,7 @@ let p2 = yt.liked_videos(p1.continuation.as_deref()).await?;
 | `history(cont)` | `FEhistory` | `post_authed` | `Page<Video>` (a video watched twice appears twice) |
 | `saved_playlists(cont)` | `FEplaylist_aggregation` | `post_authed` | `Page<PlaylistSummary>` |
 | `playlist(id, cont)` | `VL` + id | anonymous `post` | `Page<Video>` |
+| `search_videos(query, cont)` | `search` (`params` = Videos filter) | anonymous `post` | `Page<Video>` |
 
 - `cont: Option<&str>` is `None` for the first page, else the previous page's `continuation`. A continuation request sends
   `{"continuation": token}` and no `browseId`. A token that is empty, over 8192 bytes or contains whitespace/control characters gives
@@ -110,5 +111,9 @@ non-object body gives `Err(Parse)`; no cookie gives `Err(Unauthenticated)` with 
    and a top-level `playlistId` in the answer; `playlist/delete` `playlistId`.
 8. That every success answer contains `responseContext` and every failure a top-level `error` (a failing 200 that uses another shape,
    e.g. `status: "STATUS_FAILED"` in `edit_playlist`, would currently count as success).
-9. History/liked requested anonymously-shaped signed-out answers: the parser returns an empty page (fixture
+9. `search_videos`: the `params` value `EgIQAQ%3D%3D` (Videos filter chip) and that the answer holds `videoRenderer` rows under
+   `twoColumnSearchResultsRenderer`; Shorts shelves as `shortsLockupViewModel`; premieres that have not started as a
+   `videoRenderer` with `upcomingEventData` and no length (no `is_upcoming` flag exists: callers should treat `duration_ms: None`
+   as "not a finished video"). Hand-authored fixture `yt_handwritten_search_videos.json` only.
+10. History/liked requested anonymously-shaped signed-out answers: the parser returns an empty page (fixture
    `yt_handwritten_empty_signed_out.json`); the live signed-out text is a guess.

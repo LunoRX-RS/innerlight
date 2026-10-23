@@ -1,4 +1,4 @@
-//! Signed-in YouTube listings (client WEB): liked videos, watch later, history, saved playlists, and public playlists.
+//! Signed-in YouTube listings (client WEB): liked videos, watch later, history, saved playlists, public playlists and video search.
 //!
 //! Every call is a `browse` request. The first page is requested by browse id, later pages by the opaque `continuation`
 //! token of the previous [`Page`]. Live streams and Shorts are flagged on [`Video`], never filtered here.
@@ -11,6 +11,18 @@ use serde_json::{Value, json};
 
 pub use model::{ChannelRef, Page, PlaylistSummary, Thumbnail, Video};
 pub use parse::{parse_playlist_page, parse_video_page};
+
+/// `params` of a video-only search (the site's own "Videos" filter chip).
+const VIDEOS_FILTER: &str = "EgIQAQ%3D%3D";
+const MAX_QUERY_LEN: usize = 512;
+
+/// Tokens are base64url with percent escapes; anything with controls or an absurd size is a caller bug.
+fn check_token(t: &str) -> Result<&str, Error> {
+    if t.is_empty() || t.len() > 8192 || t.chars().any(|c| c.is_control() || c.is_whitespace()) {
+        return Err(Error::InvalidRequest);
+    }
+    Ok(t)
+}
 
 /// Handle for the YouTube listings of one [`Client`] (borrowed; cheap to create).
 #[derive(Clone, Copy)]
@@ -53,15 +65,26 @@ impl<'a> Youtube<'a> {
         parse_video_page(&self.browse(false, &browse_id, continuation).await?)
     }
 
-    async fn browse(&self, authed: bool, browse_id: &str, continuation: Option<&str>) -> Result<Value, Error> {
+    /// Video search (the site's "Videos" filter), fetched anonymously. `query` is trimmed and must be 1..=512 characters
+    /// without control characters (`InvalidRequest` otherwise, nothing sent). Live streams and Shorts are flagged on
+    /// [`Video`], not filtered; premieres that have not started have `duration_ms: None` and `is_live: false`.
+    pub async fn search_videos(&self, query: &str, continuation: Option<&str>) -> Result<Page<Video>, Error> {
         let body = match continuation {
-            Some(t) => {
-                // Tokens are base64url with percent escapes; anything with controls or an absurd size is a caller bug.
-                if t.is_empty() || t.len() > 8192 || t.chars().any(|c| c.is_control() || c.is_whitespace()) {
+            Some(t) => json!({"continuation": check_token(t)?}),
+            None => {
+                let q = query.trim();
+                if q.is_empty() || q.len() > MAX_QUERY_LEN || q.chars().any(char::is_control) {
                     return Err(Error::InvalidRequest);
                 }
-                json!({"continuation": t})
+                json!({"query": q, "params": VIDEOS_FILTER})
             }
+        };
+        parse_video_page(&self.client.post(ClientKind::Web, "search", body).await?)
+    }
+
+    async fn browse(&self, authed: bool, browse_id: &str, continuation: Option<&str>) -> Result<Value, Error> {
+        let body = match continuation {
+            Some(t) => json!({"continuation": check_token(t)?}),
             None => json!({"browseId": browse_id}),
         };
         if authed {

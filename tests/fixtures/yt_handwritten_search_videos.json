@@ -1,0 +1,50 @@
+{
+  "_note": "Hand-authored to mirror a WEB search response with the Videos filter. NOT a recording; ids and titles are invented.",
+  "responseContext": {"visitorData": "CgtoYW5kd3JpdHRlbg%3D%3D", "serviceTrackingParams": []},
+  "estimatedResults": "1200",
+  "contents": {"twoColumnSearchResultsRenderer": {"primaryContents": {"sectionListRenderer": {"contents": [
+    {"itemSectionRenderer": {"contents": [
+      {"videoRenderer": {
+        "videoId": "dQw4w9WgXcQ",
+        "thumbnail": {"thumbnails": [
+          {"url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/hq720.jpg", "width": 360, "height": 202},
+          {"url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/hq720_2.jpg", "width": 720, "height": 404}]},
+        "title": {"runs": [{"text": "Handwritten song one"}]},
+        "longBylineText": {"runs": [{"text": "Example Artist", "navigationEndpoint": {"browseEndpoint": {"browseId": "UCuAXFkgsw1L7xaCfnd5JJOw"}}}]},
+        "ownerText": {"runs": [{"text": "Example Artist", "navigationEndpoint": {"browseEndpoint": {"browseId": "UCuAXFkgsw1L7xaCfnd5JJOw"}}}]},
+        "lengthText": {"accessibility": {"accessibilityData": {"label": "3 minutes, 33 seconds"}}, "simpleText": "3:33"},
+        "thumbnailOverlays": [{"thumbnailOverlayTimeStatusRenderer": {"text": {"simpleText": "3:33"}, "style": "DEFAULT"}}]
+      }},
+      {"channelRenderer": {"channelId": "UCuAXFkgsw1L7xaCfnd5JJOw", "title": {"simpleText": "Example Artist"}}},
+      {"videoRenderer": {
+        "videoId": "kJQP7kiw5Fk",
+        "thumbnail": {"thumbnails": [{"url": "https://i.ytimg.com/vi/kJQP7kiw5Fk/hq720_live.jpg", "width": 360, "height": 202}]},
+        "title": {"runs": [{"text": "Handwritten live radio"}]},
+        "ownerText": {"runs": [{"text": "Some Radio", "navigationEndpoint": {"browseEndpoint": {"browseId": "UCBR8-60-B28hp2BmDPdntcQ"}}}]},
+        "badges": [{"metadataBadgeRenderer": {"style": "BADGE_STYLE_TYPE_LIVE_NOW", "label": "LIVE NOW"}}],
+        "thumbnailOverlays": [{"thumbnailOverlayTimeStatusRenderer": {"text": {"runs": [{"text": "LIVE"}]}, "style": "LIVE"}}]
+      }},
+      {"videoRenderer": {
+        "videoId": "aqz-KE-bpKQ",
+        "thumbnail": {"thumbnails": [{"url": "//i.ytimg.com/vi/aqz-KE-bpKQ/hq720.jpg", "width": 360, "height": 202}]},
+        "title": {"runs": [{"text": "Handwritten premiere"}]},
+        "ownerText": {"runs": [{"text": "Premiere Channel"}]},
+        "upcomingEventData": {"startTime": "1893456000"}
+      }},
+      {"videoRenderer": {
+        "videoId": "9bZkp7q19f0",
+        "thumbnail": {"thumbnails": [{"url": "https://i.ytimg.com/vi/9bZkp7q19f0/hq720.jpg", "width": 360, "height": 202}]},
+        "title": {"simpleText": "Handwritten song two"},
+        "ownerText": {"runs": [{"text": "Another Channel"}]},
+        "lengthText": {"simpleText": "1:02:03"}
+      }},
+      {"videoRenderer": {"videoId": "not a real id", "title": {"simpleText": "bad id"}}},
+      {"reelShelfRenderer": {"items": [{"shortsLockupViewModel": {
+        "onTap": {"innertubeCommand": {"reelWatchEndpoint": {"videoId": "JGwWNGJdvx8"}}},
+        "overlayMetadata": {"primaryText": {"content": "Handwritten short"}}}}]}}
+    ]}},
+    {"continuationItemRenderer": {"trigger": "CONTINUATION_TRIGGER_ON_ITEM_SHOWN", "continuationEndpoint": {
+      "commandMetadata": {"webCommandMetadata": {"sendPost": true, "apiUrl": "/youtubei/v1/search"}},
+      "continuationCommand": {"token": "EooDEgZsb2ZpIGEa-SEARCH2", "request": "CONTINUATION_REQUEST_TYPE_SEARCH"}}}}
+  ]}}}}
+}
