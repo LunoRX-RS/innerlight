@@ -8,6 +8,7 @@ pub mod error;
 pub mod ids;
 pub mod jsonx;
 pub mod music;
+pub mod player;
 pub mod session;
 pub mod transport;
 pub mod youtube;

@@ -1,0 +1,20 @@
+{
+ "_note": "Hand-authored player answer. NOT a recording. Invented hosts, ids and signatures. Live: only an HLS manifest, no adaptive formats.",
+ "playabilityStatus": {
+  "status": "OK",
+  "liveStreamability": {
+   "liveStreamabilityRenderer": {
+    "videoId": "dQw4w9WgXcQ"
+   }
+  }
+ },
+ "streamingData": {
+  "expiresInSeconds": "21540",
+  "hlsManifestUrl": "https://manifest.googlevideo.com/api/manifest/hls_variant/HANDWRITTEN"
+ },
+ "videoDetails": {
+  "videoId": "dQw4w9WgXcQ",
+  "isLive": true,
+  "isLiveContent": true
+ }
+}

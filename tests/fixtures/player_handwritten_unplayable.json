@@ -1,0 +1,20 @@
+{
+ "_note": "Hand-authored player answer. NOT a recording. Invented hosts, ids and signatures.",
+ "responseContext": {
+  "visitorData": "CgtoYW5kd3JpdHRlbg%3D%3D"
+ },
+ "playabilityStatus": {
+  "status": "UNPLAYABLE",
+  "reason": "The uploader has not made this video available in your country",
+  "errorScreen": {
+   "playerErrorMessageRenderer": {
+    "reason": {
+     "simpleText": "The uploader has not made this video available in your country"
+    }
+   }
+  }
+ },
+ "videoDetails": {
+  "videoId": "dQw4w9WgXcQ"
+ }
+}

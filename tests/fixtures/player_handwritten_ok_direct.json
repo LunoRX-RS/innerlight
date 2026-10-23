@@ -1,0 +1,160 @@
+{
+ "_note": "Hand-authored player answer. NOT a recording. Invented hosts, ids and signatures.",
+ "responseContext": {
+  "visitorData": "CgtoYW5kd3JpdHRlbg%3D%3D"
+ },
+ "playabilityStatus": {
+  "status": "OK",
+  "playableInEmbed": true
+ },
+ "streamingData": {
+  "expiresInSeconds": "21540",
+  "formats": [
+   {
+    "itag": 18,
+    "url": "https://rr1---sn-hw4g5e6z.googlevideo.com/videoplayback?expire=1799999999&ei=HANDWRITTEN&id=o-HW18&itag=18&source=youtube&n=ThrottleN18&sig=AAA18",
+    "mimeType": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+    "bitrate": 420000,
+    "width": 640,
+    "height": 360,
+    "contentLength": "9000000",
+    "audioQuality": "AUDIO_QUALITY_LOW"
+   }
+  ],
+  "adaptiveFormats": [
+   {
+    "itag": 137,
+    "url": "https://rr1---sn-hw4g5e6z.googlevideo.com/videoplayback?expire=1799999999&ei=HANDWRITTEN&id=o-HW137&itag=137&source=youtube&n=ThrottleN137&sig=AAA137",
+    "mimeType": "video/mp4; codecs=\"avc1.640028\"",
+    "bitrate": 4200000,
+    "width": 1920,
+    "height": 1080,
+    "contentLength": "40000000"
+   },
+   {
+    "itag": 139,
+    "url": "https://rr1---sn-hw4g5e6z.googlevideo.com/videoplayback?expire=1799999999&ei=HANDWRITTEN&id=o-HW139&itag=139&source=youtube&n=ThrottleN139&sig=AAA139",
+    "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+    "bitrate": 49500,
+    "averageBitrate": 48800,
+    "contentLength": "1208345",
+    "quality": "tiny",
+    "audioQuality": "AUDIO_QUALITY_LOW",
+    "audioSampleRate": "22050",
+    "audioChannels": 2,
+    "loudnessDb": -4.1,
+    "approxDurationMs": "212091",
+    "lastModified": "1700000000000000"
+   },
+   {
+    "itag": 140,
+    "url": "https://rr1---sn-hw4g5e6z.googlevideo.com/videoplayback?expire=1799999999&ei=HANDWRITTEN&id=o-HW140&itag=140&source=youtube&n=ThrottleN140&sig=AAA140",
+    "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+    "bitrate": 130000,
+    "averageBitrate": 129500,
+    "contentLength": "3434567",
+    "quality": "tiny",
+    "audioQuality": "AUDIO_QUALITY_MEDIUM",
+    "audioSampleRate": "44100",
+    "audioChannels": 2,
+    "loudnessDb": -4.1,
+    "approxDurationMs": "212091",
+    "lastModified": "1700000000000000"
+   },
+   {
+    "itag": 249,
+    "url": "https://rr1---sn-hw4g5e6z.googlevideo.com/videoplayback?expire=1799999999&ei=HANDWRITTEN&id=o-HW249&itag=249&source=youtube&n=ThrottleN249&sig=AAA249",
+    "mimeType": "audio/webm; codecs=\"opus\"",
+    "bitrate": 52000,
+    "averageBitrate": 50100,
+    "contentLength": "1290000",
+    "quality": "tiny",
+    "audioQuality": "AUDIO_QUALITY_LOW",
+    "audioSampleRate": "48000",
+    "audioChannels": 2,
+    "loudnessDb": -4.1,
+    "approxDurationMs": "212091",
+    "lastModified": "1700000000000000"
+   },
+   {
+    "itag": 250,
+    "url": "https://rr1---sn-hw4g5e6z.googlevideo.com/videoplayback?expire=1799999999&ei=HANDWRITTEN&id=o-HW250&itag=250&source=youtube&n=ThrottleN250&sig=AAA250",
+    "mimeType": "audio/webm; codecs=\"opus\"",
+    "bitrate": 87000,
+    "averageBitrate": 80500,
+    "contentLength": "2010000",
+    "quality": "tiny",
+    "audioQuality": "AUDIO_QUALITY_LOW",
+    "audioSampleRate": "48000",
+    "audioChannels": 2,
+    "loudnessDb": -4.1,
+    "approxDurationMs": "212091",
+    "lastModified": "1700000000000000"
+   },
+   {
+    "itag": 251,
+    "url": "https://rr2---sn-hw4g5e6z.googlevideo.com/videoplayback?expire=1799999999&ei=HANDWRITTEN&id=o-HW251&itag=251&source=youtube&n=ThrottleN251&xtags=acont%3Doriginal%3Alang%3Den-US&sig=AAA251",
+    "mimeType": "audio/webm; codecs=\"opus\"",
+    "bitrate": 138000,
+    "averageBitrate": 131000,
+    "contentLength": "3350000",
+    "quality": "tiny",
+    "audioQuality": "AUDIO_QUALITY_MEDIUM",
+    "audioSampleRate": "48000",
+    "audioChannels": 2,
+    "loudnessDb": -4.1,
+    "approxDurationMs": "212091",
+    "lastModified": "1700000000000000",
+    "audioTrack": {
+     "id": "en.4",
+     "displayName": "English (United States) original",
+     "audioIsDefault": true
+    }
+   },
+   {
+    "itag": 251,
+    "url": "https://rr3---sn-hw4g5e6z.googlevideo.com/videoplayback?expire=1799999999&ei=HANDWRITTEN&id=o-HW251&itag=251&source=youtube&n=ThrottleN251&xtags=acont%3Ddubbed%3Alang%3Des-US&sig=AAA251",
+    "mimeType": "audio/webm; codecs=\"opus\"",
+    "bitrate": 160000,
+    "averageBitrate": 150000,
+    "contentLength": "3900000",
+    "quality": "tiny",
+    "audioQuality": "AUDIO_QUALITY_MEDIUM",
+    "audioSampleRate": "48000",
+    "audioChannels": 2,
+    "loudnessDb": -4.1,
+    "approxDurationMs": "212091",
+    "lastModified": "1700000000000000",
+    "audioTrack": {
+     "id": "es-US.10",
+     "displayName": "Spanish (United States) dubbed",
+     "audioIsDefault": false
+    }
+   },
+   {
+    "itag": 141,
+    "url": "https://rr1---sn-hw4g5e6z.googlevideo.com/videoplayback?expire=1799999999&ei=HANDWRITTEN&id=o-HW141&itag=141&source=youtube&n=ThrottleN141&sig=AAA141",
+    "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+    "bitrate": 256000,
+    "averageBitrate": 255000,
+    "contentLength": "6000000",
+    "quality": "tiny",
+    "audioQuality": "AUDIO_QUALITY_HIGH",
+    "audioSampleRate": "44100",
+    "audioChannels": 2,
+    "loudnessDb": -4.1,
+    "approxDurationMs": "212091",
+    "lastModified": "1700000000000000",
+    "drmFamilies": [
+     "WIDEVINE"
+    ],
+    "drmTrackType": "DRM_TRACK_TYPE_AUDIO"
+   }
+  ]
+ },
+ "videoDetails": {
+  "videoId": "dQw4w9WgXcQ",
+  "isLive": false,
+  "lengthSeconds": "212"
+ }
+}

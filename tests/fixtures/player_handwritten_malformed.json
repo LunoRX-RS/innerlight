@@ -1,0 +1,59 @@
+{
+ "_note": "Hand-authored player answer. NOT a recording. Invented hosts, ids and signatures. Odd shapes: OK status but nothing usable.",
+ "playabilityStatus": {
+  "status": "OK"
+ },
+ "streamingData": {
+  "expiresInSeconds": {
+   "x": 1
+  },
+  "adaptiveFormats": [
+   null,
+   3,
+   "x",
+   [],
+   {},
+   {
+    "itag": "abc",
+    "mimeType": "audio/mp4",
+    "url": "https://a.googlevideo.com/x"
+   },
+   {
+    "itag": 140,
+    "mimeType": 5,
+    "url": "https://a.googlevideo.com/x"
+   },
+   {
+    "itag": 140,
+    "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+    "url": 7
+   },
+   {
+    "itag": 140,
+    "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+    "signatureCipher": "s=&url="
+   },
+   {
+    "itag": 140,
+    "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+    "signatureCipher": "%%%%"
+   },
+   {
+    "itag": 140,
+    "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+    "url": "https://a.googlevideo.com/x",
+    "contentLength": "-5",
+    "bitrate": "fast",
+    "audioTrack": "en"
+   },
+   {
+    "itag": 141,
+    "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+    "url": "https://a.googlevideo.com/x",
+    "contentLength": "0",
+    "bitrate": -1
+   }
+  ],
+  "formats": "no"
+ }
+}

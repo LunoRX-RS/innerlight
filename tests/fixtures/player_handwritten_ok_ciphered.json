@@ -1,0 +1,54 @@
+{
+ "_note": "Hand-authored player answer. NOT a recording. Invented hosts, ids and signatures. Every stream is ciphered.",
+ "playabilityStatus": {
+  "status": "OK"
+ },
+ "streamingData": {
+  "expiresInSeconds": "21540",
+  "formats": [
+   {
+    "itag": 18,
+    "signatureCipher": "s=ABCDEFGHIJ&sp=sig&url=https%3A%2F%2Frr1---sn-hw4g5e6z.googlevideo.com%2Fvideoplayback%3Fexpire%3D1799999999%26ei%3DHANDWRITTEN%26id%3Do-HW18%26itag%3D18%26source%3Dyoutube%26n%3DThrottleN18",
+    "mimeType": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+    "bitrate": 420000,
+    "contentLength": "9000000"
+   }
+  ],
+  "adaptiveFormats": [
+   {
+    "itag": 251,
+    "mimeType": "audio/webm; codecs=\"opus\"",
+    "bitrate": 138000,
+    "averageBitrate": 131000,
+    "contentLength": "3350000",
+    "quality": "tiny",
+    "audioQuality": "AUDIO_QUALITY_MEDIUM",
+    "audioSampleRate": "48000",
+    "audioChannels": 2,
+    "loudnessDb": -4.1,
+    "approxDurationMs": "212091",
+    "lastModified": "1700000000000000",
+    "signatureCipher": "s=ABCDEFGHIJ&sp=sig&url=https%3A%2F%2Frr1---sn-hw4g5e6z.googlevideo.com%2Fvideoplayback%3Fexpire%3D1799999999%26ei%3DHANDWRITTEN%26id%3Do-HW251%26itag%3D251%26source%3Dyoutube%26n%3DThrottleN251"
+   },
+   {
+    "itag": 140,
+    "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+    "bitrate": 130000,
+    "averageBitrate": 129500,
+    "contentLength": "3434567",
+    "quality": "tiny",
+    "audioQuality": "AUDIO_QUALITY_MEDIUM",
+    "audioSampleRate": "44100",
+    "audioChannels": 2,
+    "loudnessDb": -4.1,
+    "approxDurationMs": "212091",
+    "lastModified": "1700000000000000",
+    "cipher": "s=KLMNOPQRST&sp=signature&url=https%3A%2F%2Frr2---sn-hw4g5e6z.googlevideo.com%2Fvideoplayback%3Fexpire%3D1799999999%26ei%3DHANDWRITTEN%26id%3Do-HW140%26itag%3D140%26source%3Dyoutube%26n%3DThrottleN140"
+   }
+  ]
+ },
+ "videoDetails": {
+  "videoId": "dQw4w9WgXcQ",
+  "isLive": false
+ }
+}

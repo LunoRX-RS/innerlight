@@ -1,8 +1,9 @@
 //! Signed-in account actions: like, subscribe, playlist edits. Every call goes through `Client::post_authed`
 //! (client WEB), so without a cookie session it fails with `Unauthenticated` and sends nothing.
 //!
-//! A call succeeds only when the answer is JSON with a `responseContext` and no top-level `error`.
-//! A top-level `error` maps to `Error::Refused`, a body without `responseContext` to `Error::Parse`.
+//! A call succeeds only when the answer is JSON with a `responseContext`, no top-level `error` and no failed
+//! `status`. A top-level `error`, or a `status` string containing `FAIL` (`STATUS_FAILED`), maps to
+//! `Error::Refused`; a body without `responseContext` to `Error::Parse`.
 
 use crate::{Client, ClientKind, Error, ids};
 use serde_json::{Value, json};
@@ -44,10 +45,14 @@ fn playlist(id: &str) -> Result<(), Error> {
     (ids::is_playlist_id(id) && !id.starts_with("VL")).then_some(()).ok_or(Error::InvalidId)
 }
 
-/// 2xx JSON with `responseContext` and no `error`.
+/// 2xx JSON with `responseContext`, no `error` and no failed `status`.
 fn check(v: &Value) -> Result<(), Error> {
     let obj = v.as_object().ok_or(Error::Parse)?;
     if obj.contains_key("error") {
+        return Err(Error::Refused);
+    }
+    // Some edits answer 200 with `"status": "STATUS_FAILED"`.
+    if obj.get("status").and_then(Value::as_str).is_some_and(|s| s.to_ascii_uppercase().contains("FAIL")) {
         return Err(Error::Refused);
     }
     if !obj.contains_key("responseContext") {

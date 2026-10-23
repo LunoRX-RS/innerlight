@@ -1,0 +1,20 @@
+{
+ "_note": "Hand-authored player answer. NOT a recording. Invented hosts, ids and signatures.",
+ "responseContext": {
+  "visitorData": "CgtoYW5kd3JpdHRlbg%3D%3D"
+ },
+ "playabilityStatus": {
+  "status": "LOGIN_REQUIRED",
+  "reason": "Sign in to continue",
+  "errorScreen": {
+   "playerErrorMessageRenderer": {
+    "reason": {
+     "simpleText": "Sign in to continue"
+    }
+   }
+  }
+ },
+ "videoDetails": {
+  "videoId": "dQw4w9WgXcQ"
+ }
+}

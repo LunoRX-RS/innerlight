@@ -1,0 +1,20 @@
+{
+ "_note": "Hand-authored player answer. NOT a recording. Invented hosts, ids and signatures.",
+ "responseContext": {
+  "visitorData": "CgtoYW5kd3JpdHRlbg%3D%3D"
+ },
+ "playabilityStatus": {
+  "status": "LOGIN_REQUIRED",
+  "reason": "This video may be inappropriate for some users. Sign in to confirm your age.",
+  "errorScreen": {
+   "playerErrorMessageRenderer": {
+    "reason": {
+     "simpleText": "This video may be inappropriate for some users. Sign in to confirm your age."
+    }
+   }
+  }
+ },
+ "videoDetails": {
+  "videoId": "dQw4w9WgXcQ"
+ }
+}

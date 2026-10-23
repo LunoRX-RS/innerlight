@@ -1,0 +1,20 @@
+{
+ "_note": "Hand-authored player answer. NOT a recording. Invented hosts, ids and signatures.",
+ "responseContext": {
+  "visitorData": "CgtoYW5kd3JpdHRlbg%3D%3D"
+ },
+ "playabilityStatus": {
+  "status": "ERROR",
+  "reason": "Video unavailable",
+  "errorScreen": {
+   "playerErrorMessageRenderer": {
+    "reason": {
+     "simpleText": "Video unavailable"
+    }
+   }
+  }
+ },
+ "videoDetails": {
+  "videoId": "dQw4w9WgXcQ"
+ }
+}
