@@ -1,4 +1,4 @@
-# lunorx-youtube: design
+# innerlight: design
 
 Shared YouTube / YouTube Music client for LunoRX desktop and mobile. MIT. No UI, no Tauri, no audio output.
 
