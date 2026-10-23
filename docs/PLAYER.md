@@ -52,7 +52,8 @@ let r = player.resolve("dQw4w9WgXcQ", ResolveOptions {
   every `Decipher` output). Returns the normalised URL.
 - **`ranged_reader_plan(size, chunk)`**: lazy iterator of inclusive `ByteRange{start,end}` (`header_value()` = `bytes=a-b`). The
   media host wants ranged requests, so a downloader/reader should walk this plan. Empty for size 0 or chunk 0.
-- **`Decipher`** (`decipher(&self, s) -> Result<String, PlayerError>`, `throttle_fix(&self, url) -> Result<String, PlayerError>`):
+- **`Decipher`** (`decipher(&self, s) -> Result<String, PlayerError>`, `throttle_fix(&self, url) -> Result<String, PlayerError>`; the real
+  implementation is `decipher::ScriptDecipher`, see [`DECIPHER.md`](DECIPHER.md)):
   for ciphered streams the result is appended as `&{sp}=<percent-encoded result>`; `throttle_fix` runs on every URL that has an `n`
   parameter. With no `Decipher`, a direct URL with `n` is still returned, flagged `needs_throttle_fix = true` (the server may
   serve it slowly), and a ciphered-only answer is `NeedsDecipher`.
@@ -77,12 +78,13 @@ Playback produces sound end to end only when all of this exists; the first three
    This crate reports that (`LoginRequired{bot_check: true}`) and stops. Whether a user's own signed-in cookie
    (`authed: true`) is enough is **unverified** (no live request was made while writing this); the player may still demand
    proof-of-origin tokens that this crate does not and will not forge. Without a resolved answer there is nothing to play.
-2. **Signature deciphering and `n` (throttle) fixing.** Open item. No `Decipher` implementation ships. Many answers carry
-   `signatureCipher`; without a `Decipher` these resolve to `NeedsDecipher`. An implementation must: fetch the site's player
-   script (the URL changes with `signatureTimestamp`'s player version), locate and execute the signature-transform and the
-   `n`-transform functions in a sandboxed JS evaluation (or a faithful reimplementation), cache them per player version, survive
-   script changes with clear errors (never a silent wrong URL), obey the same no-evasion scope, and return only what
-   `check_stream_url` accepts. The caller must also supply a current `signatureTimestamp` taken from that same script.
+2. **Signature deciphering and `n` (throttle) fixing.** Implemented in `innerlight::decipher` (`ScriptDecipher`,
+   `ScriptCache`; see [`DECIPHER.md`](DECIPHER.md)): it fetches the public player script, locates both transforms by structure,
+   runs only their definitions in a sandboxed pure-Rust JS engine, verifies by behaviour, and fails with a typed
+   `ScriptShapeChanged` instead of ever returning the input. It was verified against one saved real script and hand-authored mini
+   scripts. **Not proven:** that the service accepts a URL deciphered this way (that needs a live `player` answer, see item 1),
+   or that it matches a browser engine's output. The caller supplies `ResolveOptions::signature_timestamp` from
+   `ScriptDecipher::signature_timestamp()` and calls `ScriptCache::invalidate()` on `DecipherFailed`.
 3. **Client versions** in `client::versions` are unverified against the live site; a stale version can make the service answer
    differently.
 4. **A ranged HTTP reader and a decoder/audio output.** This crate returns a URL and a range plan. Fetching bytes

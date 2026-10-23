@@ -4,6 +4,7 @@
 //! (GPL-3.0); see `docs/DESIGN.md` for the clean-room rules.
 pub mod account;
 pub mod client;
+pub mod decipher;
 pub mod error;
 pub mod ids;
 pub mod jsonx;

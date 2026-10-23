@@ -85,6 +85,22 @@ pub fn validate_endpoint(endpoint: &str) -> Result<(), Error> {
     ok.then_some(()).ok_or(Error::InvalidRequest)
 }
 
+/// Hosts a static GET may go to.
+const STATIC_HOSTS: [&str; 4] = ["www.youtube.com", "youtube.com", "music.youtube.com", "s.ytimg.com"];
+
+/// `https` to one of [`STATIC_HOSTS`], at most 2 KiB, no userinfo, port or fragment.
+pub fn validate_static_url(url: &str) -> Result<(), Error> {
+    let u = reqwest::Url::parse(url).map_err(|_| Error::InvalidRequest)?;
+    let ok = url.len() <= 2048
+        && u.scheme() == "https"
+        && u.host_str().is_some_and(|h| STATIC_HOSTS.contains(&h))
+        && u.username().is_empty()
+        && u.password().is_none()
+        && u.port().is_none()
+        && u.fragment().is_none();
+    ok.then_some(()).ok_or(Error::InvalidRequest)
+}
+
 struct State {
     session: Session,
     visitor_data: Option<String>,
@@ -220,6 +236,24 @@ impl Client {
     /// Returns [`Error::Unauthenticated`] without sending anything when no signable cookie is stored.
     pub async fn post_authed(&self, kind: ClientKind, endpoint: &str, body: Value) -> Result<Value, Error> {
         self.send(kind, endpoint, body, true).await
+    }
+
+    /// Anonymous GET of a public static file on the site (the player script and its loader). `https` only, host
+    /// must be `www.youtube.com`, `youtube.com`, `music.youtube.com` or `s.ytimg.com`, no userinfo, port or
+    /// fragment. No cookie or account header is ever sent; same timeout and size limit as POST. Returns the body of
+    /// a 2xx answer.
+    pub async fn get_static(&self, url: &str) -> Result<Vec<u8>, Error> {
+        validate_static_url(url)?;
+        let response = tokio::time::timeout(self.0.timeout, self.0.transport.get(url.to_owned()))
+            .await
+            .map_err(|_| Error::Network)??;
+        if !(200..300).contains(&response.status) {
+            return Err(Error::from_status(response.status, response.retry_after));
+        }
+        if response.body.len() > self.0.max_bytes {
+            return Err(Error::TooLarge);
+        }
+        Ok(response.body)
     }
 
     async fn send(&self, kind: ClientKind, endpoint: &str, mut body: Value, authed: bool) -> Result<Value, Error> {
