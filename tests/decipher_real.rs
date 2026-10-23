@@ -1,5 +1,6 @@
-//! The saved real player script (`tests/fixtures/player_js_cbcfbf2f.js`, fetched 2026-10-23): both transforms must
-//! be located by structure and behave like the transforms. This proves the extraction and execution machinery
+//! The real player script, read from the file named by `INNERLIGHT_PLAYER_JS` (not committed: Google owns it). Both
+//! transforms must be located by structure and behave like the transforms. These tests are `#[ignore]`d and fail
+//! loudly if the variable is missing, so a skipped run can never look like a pass. This proves the extraction and execution machinery
 //! against a real script; it cannot prove that the service accepts a deciphered URL (that needs a live player answer).
 
 use innerlight::decipher::{PlayerScript, ScriptDecipher};
@@ -7,9 +8,9 @@ use std::collections::BTreeMap;
 use std::time::Instant;
 
 fn fixture() -> PlayerScript {
-    let js = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/player_js_cbcfbf2f.js"))
-        .expect("fixture");
-    PlayerScript::from_source("cbcfbf2f".into(), js).expect("valid script")
+    let path = std::env::var("INNERLIGHT_PLAYER_JS").expect("set INNERLIGHT_PLAYER_JS to a saved player script");
+    let js = std::fs::read_to_string(path).expect("readable player script");
+    PlayerScript::from_source("local".into(), js).expect("valid script")
 }
 
 fn counts(s: &str) -> BTreeMap<char, usize> {
@@ -21,6 +22,7 @@ fn counts(s: &str) -> BTreeMap<char, usize> {
 }
 
 #[test]
+#[ignore = "needs INNERLIGHT_PLAYER_JS"]
 fn real_script_both_transforms() {
     let script = fixture();
     assert_eq!(script.signature_timestamp(), Ok(20746));
@@ -45,6 +47,7 @@ fn real_script_both_transforms() {
 }
 
 #[test]
+#[ignore = "needs INNERLIGHT_PLAYER_JS"]
 fn real_script_details() {
     use innerlight::player::Decipher;
     let d = ScriptDecipher::new(&fixture()).expect("located");

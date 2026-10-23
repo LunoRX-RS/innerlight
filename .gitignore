@@ -1,2 +1,3 @@
 target/
 Cargo.lock.bak
+tests/fixtures/player_js_*.js

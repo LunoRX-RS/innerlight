@@ -83,8 +83,8 @@ reaches the helper and a string table through `T[e^K]` lookups, with the signatu
 
 ## What the saved real script proved and did not prove
 
-`tests/fixtures/player_js_cbcfbf2f.js` (player `cbcfbf2f`, `signatureTimestamp` 20746, fetched 2026-10-23, unmodified apart from a
-header comment). Proved: both structures are located by heuristics (`helper-dispatcher`, `marker-in-string-table`), the closure
+The real player script (player `cbcfbf2f`, `signatureTimestamp` 20746, fetched 2026-10-23) was used for these checks. It is
+not committed (Google owns it). Point `INNERLIGHT_PLAYER_JS` at a copy to rerun `decipher_real` and the real-script fuzz test. Proved: both structures are located by heuristics (`helper-dispatcher`, `marker-in-string-table`), the closure
 loads in the pure-Rust engine, the signature is a stable position mapping of the input (drops characters, never adds),
 and the `n` transform returns a deterministic, changed, valid value for every input tried without taking the script's failure
 path. **Not proved:** that the service accepts a URL deciphered this way. That needs a live `player` answer, which this crate

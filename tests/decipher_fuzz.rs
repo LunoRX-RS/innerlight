@@ -126,9 +126,10 @@ fn mutated_scripts() {
 }
 
 #[test]
+#[ignore = "needs INNERLIGHT_PLAYER_JS"]
 fn truncated_real_script() {
-    let js =
-        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/player_js_cbcfbf2f.js")).unwrap();
+    let path = std::env::var("INNERLIGHT_PLAYER_JS").expect("set INNERLIGHT_PLAYER_JS to a saved player script");
+    let js = std::fs::read_to_string(path).unwrap();
     let mut rng = Rng(42);
     for _ in 0..6 {
         let mut cut = (rng.next() as usize) % 400_000;
