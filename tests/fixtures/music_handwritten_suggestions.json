@@ -1,0 +1,71 @@
+{
+ "responseContext": {
+  "visitorData": "CgtIQU5ETFdSSVRURU4%3D"
+ },
+ "contents": [
+  {
+   "searchSuggestionsSectionRenderer": {
+    "contents": [
+     {
+      "searchSuggestionRenderer": {
+       "suggestion": {
+        "runs": [
+         {
+          "text": "hel"
+         },
+         {
+          "text": "lo world",
+          "bold": true
+         }
+        ]
+       },
+       "navigationEndpoint": {
+        "searchEndpoint": {
+         "query": "hello world"
+        }
+       }
+      }
+     },
+     {
+      "searchSuggestionRenderer": {
+       "suggestion": {
+        "runs": [
+         {
+          "text": "hel"
+         },
+         {
+          "text": "lo again",
+          "bold": true
+         }
+        ]
+       }
+      }
+     },
+     {
+      "historySuggestionRenderer": {
+       "suggestion": {
+        "runs": [
+         {
+          "text": "hello history"
+         }
+        ]
+       },
+       "navigationEndpoint": {
+        "searchEndpoint": {
+         "query": "hello history"
+        }
+       }
+      }
+     },
+     {
+      "searchSuggestionRenderer": {
+       "suggestion": {
+        "runs": []
+       }
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,47 @@
+{
+ "responseContext": {
+  "visitorData": "CgtIQU5ETFdSSVRURU4%3D"
+ },
+ "contents": {
+  "elementRenderer": {
+   "newElement": {
+    "type": {
+     "componentType": {
+      "model": {
+       "timedLyricsModel": {
+        "lyricsData": {
+         "timedLyricsData": [
+          {
+           "lyricLine": "First line",
+           "cueRange": {
+            "startTimeMilliseconds": "1500",
+            "endTimeMilliseconds": "3000"
+           }
+          },
+          {
+           "lyricLine": "Second line",
+           "cueRange": {
+            "startTimeMilliseconds": "3000",
+            "endTimeMilliseconds": "4500"
+           }
+          },
+          {
+           "lyricLine": "No cue line"
+          },
+          {
+           "lyricLine": "Last line",
+           "cueRange": {
+            "startTimeMilliseconds": 4500
+           }
+          }
+         ],
+         "sourceMessage": "Source: Example Lyrics Provider"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

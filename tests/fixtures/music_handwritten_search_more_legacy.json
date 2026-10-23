@@ -1,0 +1,97 @@
+{
+ "continuationContents": {
+  "musicShelfContinuation": {
+   "contents": [
+    {
+     "musicResponsiveListItemRenderer": {
+      "thumbnail": {
+       "musicThumbnailRenderer": {
+        "thumbnail": {
+         "thumbnails": [
+          {
+           "url": "https://example.invalid/bbbbbbbbbb2=w60-h60",
+           "width": 60,
+           "height": 60
+          },
+          {
+           "url": "https://example.invalid/bbbbbbbbbb2=w226-h226",
+           "width": 226,
+           "height": 226
+          }
+         ]
+        }
+       }
+      },
+      "flexColumns": [
+       {
+        "musicResponsiveListItemFlexColumnRenderer": {
+         "text": {
+          "runs": [
+           {
+            "text": "Second Page Song",
+            "navigationEndpoint": {
+             "watchEndpoint": {
+              "videoId": "bbbbbbbbbb2"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        "musicResponsiveListItemFlexColumnRenderer": {
+         "text": {
+          "runs": [
+           {
+            "text": "Example Artist",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "UCuAXFkgsw1L7xaCfnd5JJOw",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+               }
+              }
+             }
+            }
+           },
+           {
+            "text": " • "
+           },
+           {
+            "text": "2:30"
+           }
+          ]
+         }
+        }
+       }
+      ],
+      "overlay": {
+       "musicItemThumbnailOverlayRenderer": {
+        "content": {
+         "musicPlayButtonRenderer": {
+          "playNavigationEndpoint": {
+           "watchEndpoint": {
+            "videoId": "bbbbbbbbbb2",
+            "playlistId": "RDAMVMbbbbbbbbbb2",
+            "watchEndpointMusicSupportedConfigs": {
+             "watchEndpointMusicConfig": {
+              "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "playlistItemData": {
+       "videoId": "bbbbbbbbbb2"
+      }
+     }
+    }
+   ]
+  }
+ }
+}

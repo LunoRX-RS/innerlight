@@ -1,0 +1,400 @@
+{
+ "responseContext": {
+  "visitorData": "CgtIQU5ETFdSSVRURU4%3D"
+ },
+ "contents": {
+  "twoColumnBrowseResultsRenderer": {
+   "tabs": [
+    {
+     "tabRenderer": {
+      "content": {
+       "sectionListRenderer": {
+        "contents": [
+         {
+          "musicResponsiveHeaderRenderer": {
+           "title": {
+            "runs": [
+             {
+              "text": "Example Album"
+             }
+            ]
+           },
+           "subtitle": {
+            "runs": [
+             {
+              "text": "Album"
+             },
+             {
+              "text": " • "
+             },
+             {
+              "text": "2021"
+             }
+            ]
+           },
+           "secondSubtitle": {
+            "runs": [
+             {
+              "text": "2 songs"
+             },
+             {
+              "text": " • "
+             },
+             {
+              "text": "7 minutes"
+             }
+            ]
+           },
+           "straplineTextOne": {
+            "runs": [
+             {
+              "text": "Example Artist",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UCuAXFkgsw1L7xaCfnd5JJOw",
+                "browseEndpointContextSupportedConfigs": {
+                 "browseEndpointContextMusicConfig": {
+                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                 }
+                }
+               }
+              }
+             }
+            ]
+           },
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://example.invalid/album=w60-h60",
+                "width": 60,
+                "height": 60
+               },
+               {
+                "url": "https://example.invalid/album=w226-h226",
+                "width": 226,
+                "height": 226
+               }
+              ]
+             }
+            }
+           },
+           "description": {
+            "musicDescriptionShelfRenderer": {
+             "description": {
+              "runs": [
+               {
+                "text": "An invented album."
+               }
+              ]
+             }
+            }
+           },
+           "buttons": [
+            {
+             "musicPlayButtonRenderer": {
+              "playNavigationEndpoint": {
+               "watchEndpoint": {
+                "videoId": "aqz-KE-bpKQ",
+                "playlistId": "OLAK5uy_nPVVQ5bB1Fx4XqXVWwTn7b0sc5nB7sYzE"
+               }
+              }
+             }
+            }
+           ]
+          }
+         }
+        ]
+       }
+      }
+     }
+    }
+   ],
+   "secondaryContents": {
+    "sectionListRenderer": {
+     "contents": [
+      {
+       "musicShelfRenderer": {
+        "contents": [
+         {
+          "musicResponsiveListItemRenderer": {
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://example.invalid/aqz-KE-bpKQ=w60-h60",
+                "width": 60,
+                "height": 60
+               },
+               {
+                "url": "https://example.invalid/aqz-KE-bpKQ=w226-h226",
+                "width": 226,
+                "height": 226
+               }
+              ]
+             }
+            }
+           },
+           "flexColumns": [
+            {
+             "musicResponsiveListItemFlexColumnRenderer": {
+              "text": {
+               "runs": [
+                {
+                 "text": "Example Song",
+                 "navigationEndpoint": {
+                  "watchEndpoint": {
+                   "videoId": "aqz-KE-bpKQ"
+                  }
+                 }
+                }
+               ]
+              }
+             }
+            }
+           ],
+           "overlay": {
+            "musicItemThumbnailOverlayRenderer": {
+             "content": {
+              "musicPlayButtonRenderer": {
+               "playNavigationEndpoint": {
+                "watchEndpoint": {
+                 "videoId": "aqz-KE-bpKQ",
+                 "playlistId": "RDAMVMaqz-KE-bpKQ",
+                 "watchEndpointMusicSupportedConfigs": {
+                  "watchEndpointMusicConfig": {
+                   "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "playlistItemData": {
+            "videoId": "aqz-KE-bpKQ"
+           },
+           "fixedColumns": [
+            {
+             "musicResponsiveListItemFixedColumnRenderer": {
+              "text": {
+               "runs": [
+                {
+                 "text": "3:45"
+                }
+               ]
+              }
+             }
+            }
+           ],
+           "customIndexColumn": {
+            "musicCustomIndexColumnRenderer": {
+             "text": {
+              "runs": [
+               {
+                "text": "1"
+               }
+              ]
+             }
+            }
+           }
+          }
+         },
+         {
+          "musicResponsiveListItemRenderer": {
+           "thumbnail": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://example.invalid/dddddddddd4=w60-h60",
+                "width": 60,
+                "height": 60
+               },
+               {
+                "url": "https://example.invalid/dddddddddd4=w226-h226",
+                "width": 226,
+                "height": 226
+               }
+              ]
+             }
+            }
+           },
+           "flexColumns": [
+            {
+             "musicResponsiveListItemFlexColumnRenderer": {
+              "text": {
+               "runs": [
+                {
+                 "text": "Second Song",
+                 "navigationEndpoint": {
+                  "watchEndpoint": {
+                   "videoId": "dddddddddd4"
+                  }
+                 }
+                }
+               ]
+              }
+             }
+            },
+            {
+             "musicResponsiveListItemFlexColumnRenderer": {
+              "text": {
+               "runs": [
+                {
+                 "text": "Guest Two",
+                 "navigationEndpoint": {
+                  "browseEndpoint": {
+                   "browseId": "UC1234567890abcdefghij_-",
+                   "browseEndpointContextSupportedConfigs": {
+                    "browseEndpointContextMusicConfig": {
+                     "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                    }
+                   }
+                  }
+                 }
+                }
+               ]
+              }
+             }
+            }
+           ],
+           "overlay": {
+            "musicItemThumbnailOverlayRenderer": {
+             "content": {
+              "musicPlayButtonRenderer": {
+               "playNavigationEndpoint": {
+                "watchEndpoint": {
+                 "videoId": "dddddddddd4",
+                 "playlistId": "RDAMVMdddddddddd4",
+                 "watchEndpointMusicSupportedConfigs": {
+                  "watchEndpointMusicConfig": {
+                   "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "playlistItemData": {
+            "videoId": "dddddddddd4"
+           },
+           "fixedColumns": [
+            {
+             "musicResponsiveListItemFixedColumnRenderer": {
+              "text": {
+               "runs": [
+                {
+                 "text": "3:20"
+                }
+               ]
+              }
+             }
+            }
+           ],
+           "customIndexColumn": {
+            "musicCustomIndexColumnRenderer": {
+             "text": {
+              "runs": [
+               {
+                "text": "2"
+               }
+              ]
+             }
+            }
+           }
+          }
+         }
+        ]
+       }
+      },
+      {
+       "musicCarouselShelfRenderer": {
+        "header": {
+         "musicCarouselShelfBasicHeaderRenderer": {
+          "title": {
+           "runs": [
+            {
+             "text": "Other versions"
+            }
+           ]
+          }
+         }
+        },
+        "contents": [
+         {
+          "musicTwoRowItemRenderer": {
+           "thumbnailRenderer": {
+            "musicThumbnailRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://example.invalid/deluxe=w60-h60",
+                "width": 60,
+                "height": 60
+               },
+               {
+                "url": "https://example.invalid/deluxe=w226-h226",
+                "width": 226,
+                "height": 226
+               }
+              ]
+             }
+            }
+           },
+           "title": {
+            "runs": [
+             {
+              "text": "Example Album (Deluxe)",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "MPREb_Zk3abcDEF12",
+                "browseEndpointContextSupportedConfigs": {
+                 "browseEndpointContextMusicConfig": {
+                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                 }
+                }
+               }
+              }
+             }
+            ]
+           },
+           "subtitle": {
+            "runs": [
+             {
+              "text": "Album"
+             },
+             {
+              "text": " • "
+             },
+             {
+              "text": "2022"
+             }
+            ]
+           },
+           "navigationEndpoint": {
+            "browseEndpoint": {
+             "browseId": "MPREb_Zk3abcDEF12",
+             "browseEndpointContextSupportedConfigs": {
+              "browseEndpointContextMusicConfig": {
+               "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+              }
+             }
+            }
+           }
+          }
+         }
+        ]
+       }
+      }
+     ]
+    }
+   }
+  }
+ }
+}

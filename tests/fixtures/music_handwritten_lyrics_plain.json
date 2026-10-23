@@ -1,0 +1,36 @@
+{
+ "responseContext": {
+  "visitorData": "CgtIQU5ETFdSSVRURU4%3D"
+ },
+ "contents": {
+  "sectionListRenderer": {
+   "contents": [
+    {
+     "musicDescriptionShelfRenderer": {
+      "header": {
+       "runs": [
+        {
+         "text": "Lyrics"
+        }
+       ]
+      },
+      "description": {
+       "runs": [
+        {
+         "text": "First line\nSecond line\n\nThird line"
+        }
+       ]
+      },
+      "footer": {
+       "runs": [
+        {
+         "text": "Source: Example Lyrics Provider"
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ }
+}

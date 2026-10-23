@@ -1,0 +1,109 @@
+{
+ "onResponseReceivedActions": [
+  {
+   "appendContinuationItemsAction": {
+    "continuationItems": [
+     {
+      "musicResponsiveListItemRenderer": {
+       "thumbnail": {
+        "musicThumbnailRenderer": {
+         "thumbnail": {
+          "thumbnails": [
+           {
+            "url": "https://example.invalid/ccccccccccc=w60-h60",
+            "width": 60,
+            "height": 60
+           },
+           {
+            "url": "https://example.invalid/ccccccccccc=w226-h226",
+            "width": 226,
+            "height": 226
+           }
+          ]
+         }
+        }
+       },
+       "flexColumns": [
+        {
+         "musicResponsiveListItemFlexColumnRenderer": {
+          "text": {
+           "runs": [
+            {
+             "text": "Third Page Song",
+             "navigationEndpoint": {
+              "watchEndpoint": {
+               "videoId": "ccccccccccc"
+              }
+             }
+            }
+           ]
+          }
+         }
+        },
+        {
+         "musicResponsiveListItemFlexColumnRenderer": {
+          "text": {
+           "runs": [
+            {
+             "text": "Example Artist",
+             "navigationEndpoint": {
+              "browseEndpoint": {
+               "browseId": "UCuAXFkgsw1L7xaCfnd5JJOw",
+               "browseEndpointContextSupportedConfigs": {
+                "browseEndpointContextMusicConfig": {
+                 "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                }
+               }
+              }
+             }
+            },
+            {
+             "text": " • "
+            },
+            {
+             "text": "2:31"
+            }
+           ]
+          }
+         }
+        }
+       ],
+       "overlay": {
+        "musicItemThumbnailOverlayRenderer": {
+         "content": {
+          "musicPlayButtonRenderer": {
+           "playNavigationEndpoint": {
+            "watchEndpoint": {
+             "videoId": "ccccccccccc",
+             "playlistId": "RDAMVMccccccccccc",
+             "watchEndpointMusicSupportedConfigs": {
+              "watchEndpointMusicConfig": {
+               "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       },
+       "playlistItemData": {
+        "videoId": "ccccccccccc"
+       }
+      }
+     },
+     {
+      "continuationItemRenderer": {
+       "continuationEndpoint": {
+        "continuationCommand": {
+         "token": "4qmFsgKPARIiVkxQTFRFU1RQTEFZTElTVDEyMzQ1Njc4OTBhYmNkZWZnaBoEOGdFQg%3D%3D",
+         "request": "CONTINUATION_REQUEST_TYPE_BROWSE"
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,173 @@
+{
+ "responseContext": {
+  "visitorData": "CgtIQU5ETFdSSVRURU4%3D"
+ },
+ "header": {
+  "musicDetailHeaderRenderer": {
+   "title": {
+    "runs": [
+     {
+      "text": "Legacy Single"
+     }
+    ]
+   },
+   "subtitle": {
+    "runs": [
+     {
+      "text": "Single"
+     },
+     {
+      "text": " • "
+     },
+     {
+      "text": "Example Artist",
+      "navigationEndpoint": {
+       "browseEndpoint": {
+        "browseId": "UCuAXFkgsw1L7xaCfnd5JJOw",
+        "browseEndpointContextSupportedConfigs": {
+         "browseEndpointContextMusicConfig": {
+          "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+         }
+        }
+       }
+      }
+     },
+     {
+      "text": " • "
+     },
+     {
+      "text": "2019"
+     }
+    ]
+   },
+   "secondSubtitle": {
+    "runs": [
+     {
+      "text": "1 song"
+     },
+     {
+      "text": " • "
+     },
+     {
+      "text": "3 minutes"
+     }
+    ]
+   },
+   "thumbnail": {
+    "musicThumbnailRenderer": {
+     "thumbnail": {
+      "thumbnails": [
+       {
+        "url": "https://example.invalid/legacy=w60-h60",
+        "width": 60,
+        "height": 60
+       },
+       {
+        "url": "https://example.invalid/legacy=w226-h226",
+        "width": 226,
+        "height": 226
+       }
+      ]
+     }
+    }
+   }
+  }
+ },
+ "contents": {
+  "singleColumnBrowseResultsRenderer": {
+   "tabs": [
+    {
+     "tabRenderer": {
+      "content": {
+       "sectionListRenderer": {
+        "contents": [
+         {
+          "musicShelfRenderer": {
+           "contents": [
+            {
+             "musicResponsiveListItemRenderer": {
+              "thumbnail": {
+               "musicThumbnailRenderer": {
+                "thumbnail": {
+                 "thumbnails": [
+                  {
+                   "url": "https://example.invalid/eeeeeeeeee5=w60-h60",
+                   "width": 60,
+                   "height": 60
+                  },
+                  {
+                   "url": "https://example.invalid/eeeeeeeeee5=w226-h226",
+                   "width": 226,
+                   "height": 226
+                  }
+                 ]
+                }
+               }
+              },
+              "flexColumns": [
+               {
+                "musicResponsiveListItemFlexColumnRenderer": {
+                 "text": {
+                  "runs": [
+                   {
+                    "text": "Legacy Song",
+                    "navigationEndpoint": {
+                     "watchEndpoint": {
+                      "videoId": "eeeeeeeeee5"
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              ],
+              "overlay": {
+               "musicItemThumbnailOverlayRenderer": {
+                "content": {
+                 "musicPlayButtonRenderer": {
+                  "playNavigationEndpoint": {
+                   "watchEndpoint": {
+                    "videoId": "eeeeeeeeee5",
+                    "playlistId": "RDAMVMeeeeeeeeee5",
+                    "watchEndpointMusicSupportedConfigs": {
+                     "watchEndpointMusicConfig": {
+                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              },
+              "playlistItemData": {
+               "videoId": "eeeeeeeeee5"
+              },
+              "fixedColumns": [
+               {
+                "musicResponsiveListItemFixedColumnRenderer": {
+                 "text": {
+                  "runs": [
+                   {
+                    "text": "3:01"
+                   }
+                  ]
+                 }
+                }
+               }
+              ]
+             }
+            }
+           ]
+          }
+         }
+        ]
+       }
+      }
+     }
+    }
+   ]
+  }
+ }
+}
