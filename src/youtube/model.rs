@@ -22,6 +22,20 @@ pub struct Thumbnail {
 pub struct ChannelRef {
     pub id: Option<String>,
     pub name: String,
+    /// The badge the channel name carries, if any. `None` when the layout did not show one.
+    #[serde(default)]
+    pub verification: Verification,
+}
+
+/// The badge after a channel name: a plain checkmark, the music-artist note, or none.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Verification {
+    #[default]
+    None,
+    /// Verified channel (checkmark).
+    Verified,
+    /// Verified music artist.
+    Artist,
 }
 
 /// A video row of a playlist, history or similar listing.

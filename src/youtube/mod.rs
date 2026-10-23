@@ -9,7 +9,7 @@ mod parse;
 use crate::{Client, ClientKind, Error, ids};
 use serde_json::{Value, json};
 
-pub use model::{ChannelRef, Page, PlaylistSummary, Thumbnail, Video};
+pub use model::{ChannelRef, Page, PlaylistSummary, Thumbnail, Verification, Video};
 pub use parse::{parse_playlist_page, parse_video_page};
 
 /// `params` of a video-only search (the site's own "Videos" filter chip).

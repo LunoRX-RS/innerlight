@@ -4,7 +4,7 @@
 //! service moves them between layouts (`playlistVideoListRenderer`, `richGridRenderer`, `sectionListRenderer`, continuation
 //! actions). Anything it does not recognise is skipped; nothing here panics or returns an error for a missing field.
 
-use super::model::{ChannelRef, Page, PlaylistSummary, Thumbnail, Video};
+use super::model::{ChannelRef, Page, PlaylistSummary, Thumbnail, Verification, Video};
 use crate::{Error, ids, jsonx};
 use serde_json::Value;
 
@@ -120,9 +120,30 @@ fn channel_from(r: &Value) -> Option<ChannelRef> {
             .and_then(Value::as_str)
             .filter(|i| ids::is_channel_id(i))
             .map(str::to_owned);
-        return Some(ChannelRef { id, name });
+        return Some(ChannelRef { id, name, verification: verification_from(r) });
     }
     None
+}
+
+/// The badge on a video row's channel: `ownerBadges` entries carry the icon type (`CHECK_CIRCLE_THICK` for a verified
+/// channel, `OFFICIAL_ARTIST_BADGE` for a verified artist). Anything else, including no badge at all, is `None`.
+fn verification_from(r: &Value) -> Verification {
+    let icons: Vec<&str> = r
+        .get("ownerBadges")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|b| jsonx::get(b, "metadataBadgeRenderer.icon.iconType").and_then(Value::as_str))
+                .collect()
+        })
+        .unwrap_or_default();
+    if icons.contains(&"OFFICIAL_ARTIST_BADGE") {
+        Verification::Artist
+    } else if icons.contains(&"CHECK_CIRCLE_THICK") {
+        Verification::Verified
+    } else {
+        Verification::None
+    }
 }
 
 fn video_renderer(r: &Value) -> Option<Video> {
@@ -270,7 +291,11 @@ fn lockup(r: &Value, f: &mut Found) {
             f.videos.push(Video {
                 id,
                 title,
-                channel: name.filter(|n| !n.is_empty()).map(|n| ChannelRef { id: cid, name: n.to_owned() }),
+                channel: name.filter(|n| !n.is_empty()).map(|n| ChannelRef {
+                    id: cid,
+                    name: n.to_owned(),
+                    verification: Verification::None,
+                }),
                 duration_ms,
                 thumbnails: sources,
                 is_live,
@@ -286,6 +311,8 @@ fn lockup(r: &Value, f: &mut Found) {
 mod tests {
     use super::*;
 
+    use serde_json::json;
+
     #[test]
     fn clock() {
         assert_eq!(duration_from_clock("3:25"), Some(205_000));
@@ -300,5 +327,16 @@ mod tests {
     fn counts() {
         assert_eq!(count_from_text("1,234 videos"), Some(1234));
         assert_eq!(count_from_text("No videos"), None);
+    }
+
+    #[test]
+    fn channel_badges_map_to_verification() {
+        let row = |badges: Value| json!({"ownerText": {"runs": [{"text": "Band"}]}, "ownerBadges": badges});
+        let icon = |t: &str| json!({"metadataBadgeRenderer": {"icon": {"iconType": t}}});
+        assert_eq!(verification_from(&row(json!([icon("OFFICIAL_ARTIST_BADGE")]))), Verification::Artist);
+        assert_eq!(verification_from(&row(json!([icon("CHECK_CIRCLE_THICK")]))), Verification::Verified);
+        assert_eq!(verification_from(&row(json!([icon("SOMETHING_ELSE")]))), Verification::None);
+        assert_eq!(verification_from(&row(json!(5))), Verification::None);
+        assert_eq!(verification_from(&json!({"ownerText": {}})), Verification::None);
     }
 }
