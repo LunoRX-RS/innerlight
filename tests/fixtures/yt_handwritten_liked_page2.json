@@ -1,0 +1,19 @@
+{
+  "_note": "Hand-authored continuation response (onResponseReceivedActions). NOT a recording.",
+  "responseContext": {"visitorData": "CgtoYW5kd3JpdHRlbg%3D%3D"},
+  "onResponseReceivedActions": [{"clickTrackingParams": "CAEQ", "appendContinuationItemsAction": {"targetId": "PLAYLIST_VIDEO_LIST", "continuationItems": [
+    {"playlistVideoRenderer": {
+      "videoId": "9bZkp7q19f0", "setVideoId": "E1F2G3H4I5J6",
+      "thumbnail": {"thumbnails": [{"url": "https://i.ytimg.com/vi/9bZkp7q19f0/hqdefault.jpg", "width": 336, "height": 188}]},
+      "title": {"runs": [{"text": "Gangnam Style"}]}, "isPlayable": true,
+      "shortBylineText": {"runs": [{"text": "officialpsy", "navigationEndpoint": {"browseEndpoint": {"browseId": "UCrDkAvwZum-UTjHmzDI2iIw"}}}]},
+      "lengthText": {"simpleText": "4:13"}
+    }},
+    {"playlistVideoRenderer": {
+      "videoId": "9bZkp7q19f0", "setVideoId": "K7L8M9N0O1P2",
+      "title": {"runs": [{"text": "Gangnam Style"}]},
+      "shortBylineText": {"runs": [{"text": "officialpsy"}]},
+      "lengthText": {"simpleText": "1:04:13"}
+    }}
+  ]}}]
+}

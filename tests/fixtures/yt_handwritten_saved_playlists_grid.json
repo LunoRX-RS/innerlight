@@ -1,0 +1,23 @@
+{
+  "_note": "Hand-authored older layout: sectionListRenderer > gridRenderer > gridPlaylistRenderer. NOT a recording.",
+  "responseContext": {},
+  "contents": {"twoColumnBrowseResultsRenderer": {"tabs": [{"tabRenderer": {"content": {"sectionListRenderer": {"contents": [
+    {"itemSectionRenderer": {"contents": [{"gridRenderer": {"items": [
+      {"gridPlaylistRenderer": {
+        "playlistId": "PLcccccccccccccccccccccccccccccccc",
+        "thumbnail": {"thumbnails": [{"url": "https://i.ytimg.com/vi/ccc/mqdefault.jpg", "width": 320, "height": 180}]},
+        "title": {"runs": [{"text": "Study music", "navigationEndpoint": {"browseEndpoint": {"browseId": "VLPLcccccccccccccccccccccccccccccccc"}}}]},
+        "videoCountText": {"runs": [{"text": "37"}, {"text": " videos"}]},
+        "videoCountShortText": {"simpleText": "37"}
+      }},
+      {"gridPlaylistRenderer": {
+        "playlistId": "PLdddddddddddddddddddddddddddddddd",
+        "thumbnail": {"thumbnails": []},
+        "sidebarThumbnails": [{"thumbnails": [{"url": "https://i.ytimg.com/vi/ddd/default.jpg", "width": 120, "height": 90}]}],
+        "title": {"simpleText": "No count here"},
+        "videoCountText": {"simpleText": "No videos"}
+      }},
+      {"gridPlaylistRenderer": {"playlistId": "a/b", "title": {"simpleText": "bad id"}}}
+    ]}}]}}
+  ]}}}}]}}
+}

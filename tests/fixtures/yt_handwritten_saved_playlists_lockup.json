@@ -1,0 +1,26 @@
+{
+  "_note": "Hand-authored to mirror WEB browse FEplaylist_aggregation, richGridRenderer + lockupViewModel (newer layout). NOT a recording.",
+  "responseContext": {"visitorData": "CgtoYW5kd3JpdHRlbg%3D%3D"},
+  "contents": {"twoColumnBrowseResultsRenderer": {"tabs": [{"tabRenderer": {"selected": true, "content": {"richGridRenderer": {"contents": [
+    {"richItemRenderer": {"content": {"lockupViewModel": {
+      "contentId": "PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf", "contentType": "LOCKUP_CONTENT_TYPE_PLAYLIST",
+      "contentImage": {"collectionThumbnailViewModel": {"primaryThumbnail": {"thumbnailViewModel": {
+        "image": {"sources": [
+          {"url": "https://i.ytimg.com/vi/aaa/hqdefault.jpg", "width": 168, "height": 94},
+          {"url": "https://i.ytimg.com/vi/aaa/hq720.jpg", "width": 336, "height": 188}]},
+        "overlays": [{"thumbnailOverlayBadgeViewModel": {"thumbnailBadges": [{"thumbnailBadgeViewModel": {"text": "1,025 videos", "badgeStyle": "THUMBNAIL_OVERLAY_BADGE_STYLE_DEFAULT"}}], "position": "THUMBNAIL_OVERLAY_BADGE_POSITION_BOTTOM_END"}}]}}}},
+      "metadata": {"lockupMetadataViewModel": {"title": {"content": "Road trip"}, "metadata": {"contentMetadataViewModel": {"metadataRows": [{"metadataParts": [{"text": {"content": "Playlist"}}]}]}}}}
+    }}}},
+    {"richItemRenderer": {"content": {"lockupViewModel": {
+      "contentId": "PLbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "contentType": "LOCKUP_CONTENT_TYPE_PLAYLIST",
+      "contentImage": {"collectionThumbnailViewModel": {"primaryThumbnail": {"thumbnailViewModel": {"image": {"sources": [{"url": "https://i.ytimg.com/vi/bbb/hqdefault.jpg", "width": 168, "height": 94}]}}}}},
+      "metadata": {"lockupMetadataViewModel": {"title": {"content": "Empty one"}}}
+    }}}},
+    {"richItemRenderer": {"content": {"lockupViewModel": {
+      "contentId": "UCuAXFkgsw1L7xaCfnd5JJOw", "contentType": "LOCKUP_CONTENT_TYPE_CHANNEL",
+      "metadata": {"lockupMetadataViewModel": {"title": {"content": "A channel, not a playlist"}}}
+    }}}},
+    {"richItemRenderer": {"content": {"lockupViewModel": {"contentId": "PLnotitlenotitlenotitlenotitle", "contentType": "LOCKUP_CONTENT_TYPE_PLAYLIST"}}}},
+    {"continuationItemRenderer": {"continuationEndpoint": {"continuationCommand": {"token": "PLAYLISTS-TOKEN-2", "request": "CONTINUATION_REQUEST_TYPE_BROWSE"}}}}
+  ]}}}}]}}
+}

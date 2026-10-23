@@ -1,0 +1,9 @@
+{
+  "_note": "Hand-authored history continuation; the continuation action wraps day sections, last page has no token. NOT a recording.",
+  "responseContext": {},
+  "onResponseReceivedActions": [{"appendContinuationItemsAction": {"continuationItems": [
+    {"itemSectionRenderer": {"contents": [
+      {"videoRenderer": {"videoId": "M7lc1UVf-VE", "title": {"simpleText": "Older video"}, "ownerText": {"runs": [{"text": "Old Chan"}]}, "lengthText": {"simpleText": "0:59"}}}
+    ]}}
+  ]}}]
+}

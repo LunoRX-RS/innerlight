@@ -1,0 +1,46 @@
+{
+  "_note": "Hand-authored to mirror WEB browse FEhistory (sectionListRenderer with day sections, videoRenderer rows). NOT a recording.",
+  "responseContext": {"visitorData": "CgtoYW5kd3JpdHRlbg%3D%3D"},
+  "contents": {"twoColumnBrowseResultsRenderer": {"tabs": [{"tabRenderer": {"selected": true, "content": {"sectionListRenderer": {"contents": [
+    {"itemSectionRenderer": {"header": {"itemSectionHeaderRenderer": {"title": {"simpleText": "Today"}}}, "contents": [
+      {"videoRenderer": {
+        "videoId": "dQw4w9WgXcQ",
+        "thumbnail": {"thumbnails": [{"url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/hq720.jpg", "width": 360, "height": 202}]},
+        "title": {"runs": [{"text": "Never Gonna Give You Up"}]},
+        "longBylineText": {"runs": [{"text": "Rick Astley", "navigationEndpoint": {"browseEndpoint": {"browseId": "UCuAXFkgsw1L7xaCfnd5JJOw"}}}]},
+        "ownerText": {"runs": [{"text": "Rick Astley", "navigationEndpoint": {"browseEndpoint": {"browseId": "UCuAXFkgsw1L7xaCfnd5JJOw"}}}]},
+        "lengthText": {"accessibility": {"accessibilityData": {"label": "3 minutes, 33 seconds"}}, "simpleText": "3:33"},
+        "viewCountText": {"simpleText": "1.5B views"},
+        "navigationEndpoint": {"commandMetadata": {"webCommandMetadata": {"url": "/watch?v=dQw4w9WgXcQ"}}, "watchEndpoint": {"videoId": "dQw4w9WgXcQ"}},
+        "thumbnailOverlays": [{"thumbnailOverlayTimeStatusRenderer": {"text": {"simpleText": "3:33"}, "style": "DEFAULT"}}]
+      }},
+      {"videoRenderer": {
+        "videoId": "kJQP7kiw5Fk",
+        "thumbnail": {"thumbnails": [{"url": "https://i.ytimg.com/vi/kJQP7kiw5Fk/hq720_live.jpg", "width": 360, "height": 202}]},
+        "title": {"runs": [{"text": "lofi stream"}]},
+        "ownerText": {"runs": [{"text": "Some Radio", "navigationEndpoint": {"browseEndpoint": {"browseId": "UCBR8-60-B28hp2BmDPdntcQ"}}}]},
+        "badges": [{"metadataBadgeRenderer": {"style": "BADGE_STYLE_TYPE_LIVE_NOW", "label": "LIVE NOW"}}],
+        "thumbnailOverlays": [{"thumbnailOverlayTimeStatusRenderer": {"text": {"runs": [{"text": "LIVE"}]}, "style": "LIVE"}}]
+      }}
+    ]}},
+    {"itemSectionRenderer": {"header": {"itemSectionHeaderRenderer": {"title": {"simpleText": "Yesterday"}}}, "contents": [
+      {"videoRenderer": {
+        "videoId": "JGwWNGJdvx8",
+        "title": {"runs": [{"text": "A short clip"}]},
+        "ownerText": {"runs": [{"text": "Clipper"}]},
+        "navigationEndpoint": {"commandMetadata": {"webCommandMetadata": {"url": "/shorts/JGwWNGJdvx8"}}, "reelWatchEndpoint": {"videoId": "JGwWNGJdvx8"}},
+        "thumbnailOverlays": [{"thumbnailOverlayTimeStatusRenderer": {"text": {"simpleText": "0:42"}, "style": "SHORTS"}}]
+      }},
+      {"videoRenderer": {
+        "videoId": "aqz-KE-bpKQ",
+        "title": {"runs": [{"text": "Big Buck Bunny"}]},
+        "ownerText": {"runs": [{"text": "Blender", "navigationEndpoint": {"browseEndpoint": {"browseId": "not-a-channel"}}}]},
+        "thumbnailOverlays": [{"thumbnailOverlayTimeStatusRenderer": {"text": {"simpleText": "10:35"}, "style": "DEFAULT"}}]
+      }},
+      {"shelfRenderer": {"title": {"simpleText": "unrelated shelf"}, "content": {"verticalListRenderer": {"items": []}}}}
+    ]}},
+    {"continuationItemRenderer": {"trigger": "CONTINUATION_TRIGGER_ON_ITEM_SHOWN", "continuationEndpoint": {
+      "commandMetadata": {"webCommandMetadata": {"apiUrl": "/youtubei/v1/browse"}},
+      "continuationCommand": {"token": "4qmFsgKsARIJRkVoaXN0b3J5-HIST2", "request": "CONTINUATION_REQUEST_TYPE_BROWSE"}}}}
+  ]}}}}]}}
+}

@@ -1,0 +1,53 @@
+{
+  "_note": "Hand-authored to mirror a WEB browse VLLL response. NOT a recording.",
+  "responseContext": {"visitorData": "CgtoYW5kd3JpdHRlbg%3D%3D", "serviceTrackingParams": []},
+  "contents": {"twoColumnBrowseResultsRenderer": {"tabs": [{"tabRenderer": {"selected": true, "content": {"sectionListRenderer": {"contents": [
+    {"itemSectionRenderer": {"contents": [{"playlistVideoListRenderer": {"playlistId": "LL", "isEditable": true, "contents": [
+      {"playlistVideoRenderer": {
+        "videoId": "dQw4w9WgXcQ", "setVideoId": "A1B2C3D4E5F6",
+        "thumbnail": {"thumbnails": [
+          {"url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/default.jpg", "width": 120, "height": 90},
+          {"url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", "width": 336, "height": 188}]},
+        "title": {"runs": [{"text": "Never Gonna Give You Up"}], "accessibility": {"accessibilityData": {"label": "Never Gonna Give You Up by Rick Astley"}}},
+        "index": {"simpleText": "1"}, "isPlayable": true,
+        "shortBylineText": {"runs": [{"text": "Rick Astley", "navigationEndpoint": {"browseEndpoint": {"browseId": "UCuAXFkgsw1L7xaCfnd5JJOw", "canonicalBaseUrl": "/@RickAstley"}}}]},
+        "lengthText": {"accessibility": {"accessibilityData": {"label": "3 minutes, 33 seconds"}}, "simpleText": "3:33"},
+        "lengthSeconds": "213",
+        "thumbnailOverlays": [{"thumbnailOverlayTimeStatusRenderer": {"text": {"simpleText": "3:33"}, "style": "DEFAULT"}}]
+      }},
+      {"playlistVideoRenderer": {
+        "videoId": "aqz-KE-bpKQ", "setVideoId": "G7H8I9J0K1L2",
+        "thumbnail": {"thumbnails": [{"url": "//i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg", "width": 336, "height": 188}]},
+        "title": {"runs": [{"text": "Big Buck Bunny "}, {"text": "60fps 4K"}]},
+        "isPlayable": true,
+        "shortBylineText": {"runs": [{"text": "Blender", "navigationEndpoint": {"browseEndpoint": {"browseId": "UCSMOQeBJ2RAnuFungnQOxLg"}}}]},
+        "lengthSeconds": "635",
+        "thumbnailOverlays": [{"thumbnailOverlayTimeStatusRenderer": {"text": {"simpleText": "10:35"}, "style": "DEFAULT"}}]
+      }},
+      {"playlistVideoRenderer": {
+        "videoId": "kJQP7kiw5Fk", "setVideoId": "M3N4O5P6Q7R8",
+        "thumbnail": {"thumbnails": [{"url": "https://i.ytimg.com/vi/kJQP7kiw5Fk/hqdefault_live.jpg", "width": 336, "height": 188}]},
+        "title": {"runs": [{"text": "lofi stream"}]}, "isPlayable": true,
+        "shortBylineText": {"runs": [{"text": "Some Radio", "navigationEndpoint": {"browseEndpoint": {"browseId": "UCBR8-60-B28hp2BmDPdntcQ"}}}]},
+        "thumbnailOverlays": [{"thumbnailOverlayTimeStatusRenderer": {"text": {"runs": [{"text": "LIVE"}]}, "style": "LIVE"}}]
+      }},
+      {"playlistVideoRenderer": {
+        "videoId": "JGwWNGJdvx8", "setVideoId": "S9T0U1V2W3X4",
+        "thumbnail": {"thumbnails": [{"url": "https://i.ytimg.com/vi/JGwWNGJdvx8/hqdefault.jpg", "width": 336, "height": 188}]},
+        "title": {"simpleText": "A short clip"}, "isPlayable": true,
+        "shortBylineText": {"runs": [{"text": "Clipper"}]},
+        "lengthSeconds": "42",
+        "navigationEndpoint": {"commandMetadata": {"webCommandMetadata": {"url": "/shorts/JGwWNGJdvx8"}}, "reelWatchEndpoint": {"videoId": "JGwWNGJdvx8"}},
+        "thumbnailOverlays": [{"thumbnailOverlayTimeStatusRenderer": {"text": {"simpleText": "0:42"}, "style": "SHORTS"}}]
+      }},
+      {"playlistVideoRenderer": {"videoId": "M7lc1UVf-VE", "setVideoId": "Y5Z6A7B8C9D0", "title": {"runs": [{"text": "[Deleted video]"}]}, "isPlayable": false}},
+      {"playlistVideoRenderer": {"title": {"runs": [{"text": "no id at all"}]}}},
+      {"playlistVideoRenderer": {"videoId": "bad id!", "title": {"runs": [{"text": "bad id"}]}}},
+      {"playlistVideoRenderer": {"videoId": "9bZkp7q19f0"}},
+      {"continuationItemRenderer": {"trigger": "CONTINUATION_TRIGGER_ON_ITEM_SHOWN", "continuationEndpoint": {
+        "clickTrackingParams": "CAAQ", "commandMetadata": {"webCommandMetadata": {"sendPost": true, "apiUrl": "/youtubei/v1/browse"}},
+        "continuationCommand": {"token": "4qmFsgKLARIGVkxMTExMGgxTQUJRVkE%3D-PAGE2", "request": "CONTINUATION_REQUEST_TYPE_BROWSE"}}}}
+    ]}}]}}
+  ]}}}}]}},
+  "header": {"playlistHeaderRenderer": {"playlistId": "LL", "title": {"simpleText": "Liked videos"}, "numVideosText": {"runs": [{"text": "1,204"}, {"text": " videos"}]}}}
+}

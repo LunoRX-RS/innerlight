@@ -1,0 +1,30 @@
+{
+  "_note": "Hand-authored: videos as lockupViewModel / shortsLockupViewModel / reelItemRenderer (newer layouts). NOT a recording.",
+  "responseContext": {},
+  "contents": {"twoColumnBrowseResultsRenderer": {"tabs": [{"tabRenderer": {"content": {"richGridRenderer": {"contents": [
+    {"richItemRenderer": {"content": {"lockupViewModel": {
+      "contentId": "dQw4w9WgXcQ", "contentType": "LOCKUP_CONTENT_TYPE_VIDEO",
+      "contentImage": {"thumbnailViewModel": {"image": {"sources": [{"url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/hq720.jpg", "width": 480, "height": 270}]},
+        "overlays": [{"thumbnailBottomOverlayViewModel": {"badges": [{"thumbnailBadgeViewModel": {"text": "3:33"}}]}}]}},
+      "metadata": {"lockupMetadataViewModel": {
+        "title": {"content": "Never Gonna Give You Up"},
+        "image": {"decoratedAvatarViewModel": {"rendererContext": {"commandContext": {"onTap": {"innertubeCommand": {"browseEndpoint": {"browseId": "UCuAXFkgsw1L7xaCfnd5JJOw"}}}}}}},
+        "metadata": {"contentMetadataViewModel": {"metadataRows": [{"metadataParts": [{"text": {"content": "Rick Astley"}}]}, {"metadataParts": [{"text": {"content": "1.5B views"}}]}]}}}}
+    }}}},
+    {"richItemRenderer": {"content": {"lockupViewModel": {
+      "contentId": "kJQP7kiw5Fk", "contentType": "LOCKUP_CONTENT_TYPE_VIDEO",
+      "contentImage": {"thumbnailViewModel": {"image": {"sources": [{"url": "https://i.ytimg.com/vi/kJQP7kiw5Fk/hq720_live.jpg", "width": 480, "height": 270}]},
+        "overlays": [{"thumbnailOverlayBadgeViewModel": {"thumbnailBadges": [{"thumbnailBadgeViewModel": {"text": "LIVE"}}]}}]}},
+      "metadata": {"lockupMetadataViewModel": {"title": {"content": "lofi stream"}}}
+    }}}},
+    {"richItemRenderer": {"content": {"shortsLockupViewModel": {
+      "entityId": "shorts-shelf-item-JGwWNGJdvx8",
+      "overlayMetadata": {"primaryText": {"content": "A short clip"}, "secondaryText": {"content": "10K views"}},
+      "onTap": {"innertubeCommand": {"reelWatchEndpoint": {"videoId": "JGwWNGJdvx8", "thumbnail": {"thumbnails": [{"url": "https://i.ytimg.com/vi/JGwWNGJdvx8/frame0.jpg", "width": 405, "height": 720}]}}}}
+    }}}},
+    {"reelShelfRenderer": {"items": [{"reelItemRenderer": {"videoId": "9bZkp7q19f0", "headline": {"simpleText": "Reel title"}, "thumbnail": {"thumbnails": [{"url": "https://i.ytimg.com/vi/9bZkp7q19f0/frame0.jpg", "width": 405, "height": 720}]}}}]}},
+    {"richItemRenderer": {"content": {"lockupViewModel": {"contentId": "aqz-KE-bpKQ", "contentType": "LOCKUP_CONTENT_TYPE_VIDEO"}}}},
+    {"richItemRenderer": {"content": {"lockupViewModel": {"contentId": "toolong-video-id", "contentType": "LOCKUP_CONTENT_TYPE_VIDEO", "metadata": {"lockupMetadataViewModel": {"title": {"content": "bad id"}}}}}}},
+    {"continuationItemRenderer": {"continuationEndpoint": {"commandExecutorCommand": {"commands": [{"continuationCommand": {"token": "LOCKUP-TOKEN-2"}}]}}}}
+  ]}}}}]}}
+}

@@ -1,0 +1,1 @@
+{"_note": "Hand-authored service error object. NOT a recording.", "error": {"code": 400, "message": "Request contains an invalid argument.", "errors": [{"message": "Request contains an invalid argument.", "domain": "global", "reason": "badRequest"}], "status": "INVALID_ARGUMENT"}}
