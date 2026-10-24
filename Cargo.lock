@@ -945,7 +945,7 @@ dependencies = [
 
 [[package]]
 name = "innerlight"
-version = "0.0.1"
+version = "1.0.2"
 dependencies = [
  "boa_engine",
  "futures-util",
