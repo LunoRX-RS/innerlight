@@ -1,0 +1,15 @@
+{
+  "responseHeader": { "status": 0, "QTime": 3 },
+  "response": {
+    "numFound": 41,
+    "start": 40,
+    "docs": [
+      {
+        "identifier": "field-recordings-tesc",
+        "title": "Field Recordings, 1968-1974",
+        "creator": "Anonymous",
+        "year": "1975"
+      }
+    ]
+  }
+}

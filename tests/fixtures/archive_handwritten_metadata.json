@@ -1,0 +1,45 @@
+{
+  "created": 1582417527,
+  "d1": "ia600100.us.archive.org",
+  "d2": "ia800100.us.archive.org",
+  "dir": "/20/items/goatlivemusic2020-02-22",
+  "files": [
+    {
+      "name": "goat2020-02-22sideA.mp3",
+      "source": "derivation",
+      "format": "MP3",
+      "title": "Side A",
+      "artist": "Goat",
+      "length": "1831.42",
+      "track": "1",
+      "size": "44012345",
+      "mtime": "1582417600"
+    },
+    {
+      "name": "disc1/02 Midset.mp3",
+      "source": "derivation",
+      "format": "MP3",
+      "title": "Midset",
+      "artist": ["Goat", "Mats Gustavsson"],
+      "length": "31:12.5",
+      "size": "15000000"
+    },
+    { "name": "scanning/prog-001.tif", "format": "Single Page TIFF", "title": "Program, page 1", "size": "812345" },
+    { "name": "", "format": "Metadata", "size": "1200" },
+    { "name": "goat2020-02-22.flac", "source": "original", "format": "Flac", "length": "56:20", "size": "300000000" }
+  ],
+  "files_count": 5,
+  "item_size": 359012345,
+  "metadata": {
+    "identifier": "goatlivemusic2020-02-22",
+    "title": "Goat - Live at Doornroosje 2020-02-22",
+    "creator": ["Goat"],
+    "year": "2020",
+    "description": "Soundboard recording, shared by the band.",
+    "licenseurl": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "mediatype": "audio",
+    "collection": ["netlabels", "audio_music"]
+  },
+  "unique": 1,
+  "whitelisted": false
+}

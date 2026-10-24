@@ -1,0 +1,28 @@
+{
+  "responseHeader": { "status": 0, "QTime": 7 },
+  "response": {
+    "numFound": 120,
+    "start": 0,
+    "docs": [
+      {
+        "identifier": "goatlivemusic2020-02-22",
+        "title": "Goat - Live at Doornroosje 2020-02-22",
+        "creator": ["Goat"],
+        "year": "2020",
+        "licenseurl": "http://creativecommons.org/publicdomain/zero/1.0/",
+        "mediatype": "audio"
+      },
+      {
+        "identifier": "ultra-sound-1972",
+        "title": ["Ultra Sound", "Ultra Sound (alternate tracklist)"],
+        "creator": "K. Stockhausen",
+        "year": 1972,
+        "mediatype": "audio"
+      },
+      {
+        "identifier": "not/a/path-segment",
+        "title": "A hit whose identifier could not be put back into a URL, so it is dropped"
+      }
+    ]
+  }
+}
