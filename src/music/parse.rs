@@ -32,6 +32,22 @@ pub fn track_page(v: &Value) -> Result<Page<Track>, Error> {
     Ok(Page { items: tracks_in(v), continuation: find_continuation(v) })
 }
 
+/// A search page of any music item type: rows, cards and shelves in document order, plus the next handle.
+/// Unlike [`search_tracks`] nothing is dropped for not being a track; filtering is the caller's.
+pub fn search_items(v: &Value) -> Result<Page<Item>, Error> {
+    require_any(v, &["contents", "continuationContents", "onResponseReceivedActions"])?;
+    // A "top result" row sits directly under `sectionListRenderer.contents`, outside any shelf, so it is read
+    // first and `sections` picks up the shelves after it.
+    let mut items = Vec::new();
+    for shelf in jsonx::find_all(v, "sectionListRenderer") {
+        for e in shelf.get("contents").and_then(Value::as_array).into_iter().flatten() {
+            items.extend(item::element_item(e));
+        }
+    }
+    items.extend(sections(v).into_iter().flat_map(|s| s.items));
+    Ok(Page { items, continuation: find_continuation(v) })
+}
+
 /// Autocomplete strings from `music/get_search_suggestions`. Signed-in history suggestions are included too.
 pub fn search_suggestions(v: &Value) -> Result<Vec<String>, Error> {
     require_any(v, &["contents"])?;
@@ -52,22 +68,30 @@ pub fn search_suggestions(v: &Value) -> Result<Vec<String>, Error> {
 
 // ---------------------------------------------------------------- next: radio queue and tab ids
 
+/// One entry of a queue list: the row itself, or a wrapper's primary row. A wrapper's "counterpart" videos are
+/// deliberately not queue entries.
+fn queue_row(e: &Value) -> Option<Track> {
+    let r = e
+        .get("playlistPanelVideoRenderer")
+        .or_else(|| jsonx::get(e, "playlistPanelVideoWrapperRenderer.primaryRenderer.playlistPanelVideoRenderer"))?;
+    panel_track(r)
+}
+
+/// Queue rows anywhere in a `next` answer: the panel's own list and the lists a continuation appends.
+fn queue_rows(v: &Value) -> Vec<Track> {
+    let mut out = Vec::new();
+    for key in ["contents", "continuationItems"] {
+        for list in jsonx::find_all(v, key).into_iter().filter_map(Value::as_array) {
+            out.extend(list.iter().filter_map(queue_row));
+        }
+    }
+    out
+}
+
 /// The `next` response: the queue (primary renderers only, never the video "counterpart") and the lyrics/related ids.
 pub fn radio(v: &Value) -> Result<Radio, Error> {
     let panel = jsonx::find_all(v, "playlistPanelRenderer").into_iter().next();
-    let queue: Vec<Track> = panel
-        .and_then(|p| p.get("contents")?.as_array())
-        .map(|c| {
-            c.iter()
-                .filter_map(|e| {
-                    e.get("playlistPanelVideoRenderer").or_else(|| {
-                        jsonx::get(e, "playlistPanelVideoWrapperRenderer.primaryRenderer.playlistPanelVideoRenderer")
-                    })
-                })
-                .filter_map(panel_track)
-                .collect()
-        })
-        .unwrap_or_default();
+    let queue = queue_rows(v);
     let lyrics_browse_id = browse_ids(v).find(|b| ids::is_lyrics_browse_id(b)).map(str::to_owned);
     let related_browse_id = browse_ids(v).find(|b| ids::is_related_browse_id(b)).map(str::to_owned);
     if panel.is_none() && lyrics_browse_id.is_none() && related_browse_id.is_none() {
@@ -75,7 +99,13 @@ pub fn radio(v: &Value) -> Result<Radio, Error> {
     }
     let playlist_id =
         panel.and_then(|p| p.get("playlistId")?.as_str()).filter(|p| ids::is_music_playlist_id(p)).map(str::to_owned);
-    Ok(Radio { queue, playlist_id, lyrics_browse_id, related_browse_id })
+    Ok(Radio { queue, playlist_id, lyrics_browse_id, related_browse_id, continuation: find_continuation(v) })
+}
+
+/// One page of a radio queue: the rows a `next` continuation call appended, plus the handle for the page after it.
+pub fn radio_page(v: &Value) -> Result<Page<Track>, Error> {
+    require_any(v, &["contents", "continuationContents", "onResponseReceivedActions"])?;
+    non_empty(queue_rows(v)).map(|items| Page { items, continuation: find_continuation(v) })
 }
 
 fn browse_ids(v: &Value) -> impl Iterator<Item = &str> {
@@ -161,7 +191,7 @@ fn main_shelf_tracks(v: &Value, keys: &[&str]) -> (Vec<Track>, Option<String>) {
 /// An album page. `id` is the browse id that was requested.
 pub fn album(v: &Value, id: &str) -> Result<Album, Error> {
     let header = header_of(v);
-    let (mut tracks, _) = main_shelf_tracks(v, &["musicShelfRenderer"]);
+    let (mut tracks, continuation) = main_shelf_tracks(v, &["musicShelfRenderer"]);
     if header.is_none() && tracks.is_empty() {
         return Err(Error::Parse);
     }
@@ -207,6 +237,7 @@ pub fn album(v: &Value, id: &str) -> Result<Album, Error> {
         track_count: count_in(&second).or(u32::try_from(tracks.len()).ok().filter(|n| *n > 0)),
         duration_ms,
         tracks,
+        continuation,
     })
 }
 
@@ -316,6 +347,13 @@ pub fn playlist(v: &Value, id: &str) -> Result<Playlist, Error> {
 /// Shelves of a charts page. `Error::Parse` when none are found.
 pub fn charts(v: &Value) -> Result<Vec<Section>, Error> {
     non_empty(sections(v))
+}
+
+/// The home feed: shelves in document order, plus the handle for the next batch. A continuation page has the same
+/// shape, so the same parser reads both.
+pub fn home_page(v: &Value) -> Result<Page<Section>, Error> {
+    require_any(v, &["contents", "continuationContents", "onResponseReceivedActions"])?;
+    non_empty(sections(v)).map(|items| Page { items, continuation: find_continuation(v) })
 }
 
 /// Playlist shelves of one mood/genre page. `Error::Parse` when none are found.

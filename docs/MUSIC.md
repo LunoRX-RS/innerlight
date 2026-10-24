@@ -10,7 +10,8 @@ knowledge and never panic; they do not prove the live site still looks like this
 
 Clean-room: nothing here was read from or ported from `rustypipe`; model types and parsing strategy are this crate's own.
 This crate does not defeat bot detection: one fixed user agent, no client rotation, no workaround for sign-in or bot challenges.
-If the site answers with a challenge, you get `Refused` / `Unauthenticated` / `Parse`, nothing more.
+If the site answers with a challenge you get `BotCheck`, or `QuotaExceeded`, `Refused`, `Unauthenticated`, `Parse` — and the client waits on
+429/5xx/timeouts but never retries a challenge (`docs/API.md`, `Policy`).
 
 ## Handle
 
@@ -29,42 +30,57 @@ Layout: `music::model` (types, re-exported in `music`), `music::ids` (validators
 |---|---|---|
 | `search_tracks(query)` | `search` `{query, params: <songs filter>}` | `Page<Track>` |
 | `search_tracks_more(token)` | `search` `{continuation}` | `Page<Track>` |
+| `search_items(query, kind)` | `search` `{query, params: <kind chip>}` | `Page<Item>` in document order, items of another kind dropped |
+| `search_items_more(token)` | `search` `{continuation}` | `Page<Item>`, unfiltered (the handle carries the request) |
+| `search_albums(query)` / `_more(token)` | `search` albums chip | `Page<AlbumSummary>` |
+| `search_artists(query)` / `_more(token)` | `search` artists chip | `Page<ArtistSummary>` |
+| `search_playlists(query)` / `_more(token)` | `search` playlists chip | `Page<PlaylistSummary>` |
 | `search_suggestions(input)` | `music/get_search_suggestions` `{input}` | `Vec<String>` |
-| `radio(video_id)` | `next` `{videoId, playlistId: "RDAMVM<id>", isAudioOnly, ...}` | `Radio` (queue + lyrics/related browse ids) |
+| `search_suggestions_authed(input)` | authed `music/get_search_suggestions` `{input}` | `Vec<String>`; the only way history entries can appear |
+| `radio(video_id)` | `next` `{videoId, playlistId: "RDAMVM<id>", isAudioOnly, ...}` | `Radio` (queue + continuation + lyrics/related browse ids) |
+| `radio_more(token)` | `next` `{continuation}` | `Page<Track>` (tab ids are not repeated on these pages) |
 | `album(browse_id)` | `browse` `{browseId: "MPREb_..."}` | `Album` |
+| `album_more(token)` | `browse` `{continuation}` | `Page<Track>` (same page shape as `playlist_more`) |
 | `artist(channel_id)` | `browse` `{browseId: "UC..."}` | `Artist` |
 | `playlist(id)` | `browse` `{browseId: "VL<id>"}` (a leading `VL` on the argument is stripped) | `Playlist` |
 | `playlist_more(token)` | `browse` `{continuation}` | `Page<Track>` |
+| `home()` / `home_authed()` | `browse` / authed `browse` `FEmusic_home` | `Page<Section>` (shelves in document order) |
+| `home_more(token)` / `home_more_authed(token)` | `browse` / authed `browse` `{continuation}` | `Page<Section>` |
 | `charts(country: Option<&str>)` | `browse` `FEmusic_charts` (+ `formData.selectedValues` for a country; `"ZZ"` = global) | `Vec<Section>` |
 | `genres()` | `browse` `FEmusic_moods_and_genres` | `Vec<GenreGroup>` |
 | `genre_playlists(params)` | `browse` `FEmusic_moods_and_genres_category` + `params` | `Vec<Section>` |
 | `new_albums()` / `new_videos()` | `browse` `FEmusic_new_releases_albums` / `_videos` | `Vec<AlbumSummary>` / `Vec<Track>` |
 | `lyrics(browse_id)` | `browse` `{browseId: "MPLYt_..."}` (id from `Radio::lyrics_browse_id`) | `Lyrics` |
 | `saved_tracks()` / `_more(token)` | authed `browse` `FEmusic_liked_videos` | `Page<Track>` |
+| `saved_tracks_tally()` / `saved_tracks_more_tally(token)` | same | `(Page<Track>, RowTally, PageProbe)` — what the page held before rows were dropped |
 | `saved_playlists()` / `_more(token)` | authed `browse` `FEmusic_liked_playlists` | `Page<PlaylistSummary>` |
 | `history()` / `_more(token)` | authed `browse` `FEmusic_history` | `Page<Track>` (groups like "Today" are flattened) |
 
-Library methods use `Client::post_authed`: without a `SAPISID` cookie they return `Error::Unauthenticated` and send nothing.
-All other methods are anonymous and never send the cookie even if one is stored.
+Methods whose row says *authed* use `Client::post_authed`: without a `SAPISID` cookie they return `Error::Unauthenticated` and send nothing.
+Everything else is anonymous and never sends the cookie even when one is stored. The `_authed` suffix is deliberate: a bool or enum argument
+would let one call carry the cookie to an endpoint that should not see it.
 
-Continuation handles are opaque strings (`Page::continuation`, `Playlist::tracks.continuation`); `None` means last page. A handle
-only works with the matching `*_more` method.
+Continuation handles are opaque strings (`Page::continuation`, `Playlist::tracks.continuation`, `Album::continuation`,
+`Radio::continuation`); `None` means last page. A handle only works with the matching `*_more` method.
 
-`music::parse` exposes the pure parsers (`search_tracks`, `track_page`, `search_suggestions`, `radio`, `lyrics`, `album(v, id)`,
-`artist(v, id)`, `playlist(v, id)`, `charts`, `genres`, `genre_playlists`, `new_albums`, `new_videos`, `library_tracks`,
-`library_playlists`), all `fn(&Value, ..) -> Result<_, Error>`. Use them to test against your own recordings.
+`music::parse` exposes the pure parsers (`search_tracks`, `search_items`, `track_page`, `search_suggestions`, `radio`, `radio_page`,
+`home_page`, `lyrics`, `album(v, id)`, `artist(v, id)`, `playlist(v, id)`, `charts`, `genres`, `genre_playlists`, `new_albums`, `new_videos`,
+`library_tracks`, `library_tracks_tally`, `library_playlists`), all `fn(&Value, ..) -> Result<_, Error>`. Use them to test against your own
+recordings.
 
 ## Model (`music::model`)
 
 - `Thumbnail {url, width, height}` (0 = unknown), `ArtistRef {id: Option<String>, name}`, `AlbumRef {id: Option<String>, name}`.
   Ids are validated: `ArtistRef::id` is a `UC...` channel id, `AlbumRef::id` an `MPREb_...` id, otherwise `None`.
 - `Track {id (video id), title, artists, album, duration_ms, thumbnails, is_explicit, kind}`; `TrackKind {Audio, Video, Unknown}`.
-- `AlbumSummary`, `Album {tracks, track_count, duration_ms, audio_playlist_id, ...}`, `AlbumKind {Album, Single, Ep, Unknown}`.
+- `AlbumSummary`, `Album {tracks, continuation, track_count, duration_ms, audio_playlist_id, ...}`, `AlbumKind {Album, Single, Ep, Unknown}`.
 - `ArtistSummary`, `Artist {top_songs, top_songs_playlist_id, albums, singles, related, subscribers (text), ...}`.
 - `PlaylistSummary`, `Playlist {tracks: Page<Track>, track_count, author, ...}`.
 - `Page<T> {items, continuation: Option<String>}`, `Item {Track|Album|Artist|Playlist}`, `Section {title, items}`,
-  `Genre {name, params}`, `GenreGroup`, `Radio {queue, playlist_id, lyrics_browse_id, related_browse_id}`,
-  `Lyrics {text, lines: Vec<LyricLine>, source}` (`is_timed()`), `LyricLine {start_ms, end_ms, text}`.
+  `SearchKind {Tracks, Albums, Artists, Playlists}` (the filter chip to ask for; `Music` narrows the page to that kind afterwards),
+  `Genre {name, params}`, `GenreGroup`, `Radio {queue, playlist_id, lyrics_browse_id, related_browse_id, continuation}`,
+  `Lyrics {text, lines: Vec<LyricLine>, source}` (`is_timed()`), `LyricLine {start_ms, end_ms, text}`,
+  `RowTally` / `PageProbe` (diagnostics for a library page: how many rows were seen and which continuation key the answer used).
 - All derive `Debug, Clone, PartialEq, Eq, Serialize, Deserialize`.
 
 ### Non-music content
@@ -90,9 +106,11 @@ links do not depend on language.
 ## Tests
 
 - `tests/music_parse.rs`: every parser against its fixture, plus malformed/missing-field cases.
-- `tests/music_api.rs`: request bodies, validation before sending, auth handling, error pass-through (`FixtureTransport`).
+- `tests/music_api.rs`: request bodies, validation before sending, auth handling, error pass-through (`FixtureTransport`). Which
+  method carries `authorization` and which must never carry `cookie` is asserted per method here, including `_authed` pairs.
 - `tests/music_fuzz.rs`: every parser on every fixture, mutated (truncated arrays/objects/strings, shuffled order, type swaps,
-  deletions), on truncated JSON text and on degenerate documents. Asserts no panic and that returned ids pass validation.
+  deletions), on truncated JSON text and on degenerate documents. Asserts no panic and that returned ids pass validation. A fixture named
+  `music_handwritten_*` is picked up automatically, so a new endpoint needs no test edit to get fuzzed.
 
 ## Unverified against the live site
 
@@ -130,3 +148,23 @@ All of these come from memory of the public site and are covered only by hand-au
     shelves / a card grid (a "New playlist" card without a browse id is skipped; `VLLM` becomes playlist id `LM`); that a signed-out or
     expired cookie shows up as `Unauthenticated`/`Refused`/`Parse` rather than an empty success is not verified.
 13. Thumbnail lists are taken from the first `thumbnails` array found under the item's thumbnail node.
+
+Added with the mixed-page search, the home feed and the signed-in suggestions. Same rule: hand-authored fixtures only, nothing compared
+to a live answer yet.
+
+14. The `params` chips for an album, artist or playlist search (`EgWKAQIIA2…`, `…BGo…`, `…BWo…`). They are the songs chip with the kind
+    number substituted in the protobuf; whether the live site sends exactly these bytes is not checked. A wrong chip means a wrong or empty
+    result page, and the typed `search_albums` / `search_artists` / `search_playlists` then drop everything, which can look like "no results"
+    rather than "wrong request".
+15. Mixed search pages: `parse::search_items` reads any shelf or row and keeps tracks, albums, artists and playlists in document order.
+    Which renderers a live filtered search answer uses (`musicResponsiveListItemRenderer` for rows, `musicCardShieldRenderer` /
+    `musicTwoRowItemRenderer` for cards) is a guess, and a card type that is not mapped is dropped rather than reported.
+16. `FEmusic_home`: that an anonymous `browse` returns generic shelves, that a signed-in one returns the personalized mix, and where the
+    next-shelves handle sits on that page. `home()` and `home_authed()` parse the same shape, so a wrong assumption shows up in both.
+17. `album_more`: the handle is the one found inside the album page's own track shelf (surfaced as `Album::continuation`) and is sent to
+    `browse` as `{"continuation": token}` — the same layout as a playlist. Whether a live album row ever carries such a handle is
+    unverified, so `Album::continuation` may always be `None` in practice and this path may never trigger.
+18. `radio_more`: the position of the continuation inside a `next` answer (`playlistPanelContinuation` vs a
+    `continuationItemRenderer` under the panel). `Radio::continuation` is `None` when neither is found, and a `None` here means "the queue is
+    complete" only if that guess is right.
+19. `search_suggestions_authed`: that `historySuggestionRenderer` appears only when signed in and that no other request field is needed.

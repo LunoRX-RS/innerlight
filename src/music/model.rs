@@ -112,6 +112,9 @@ pub struct Album {
     /// Sum of the track durations, only when every track has one.
     pub duration_ms: Option<u64>,
     pub tracks: Vec<Track>,
+    /// Handle for the next batch of this album's track list, for [`Music::album_more`](crate::music::Music::album_more).
+    /// `None` when the page carried none, which for a normal album is the whole listing.
+    pub continuation: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -189,6 +192,44 @@ pub struct Section {
     pub items: Vec<Item>,
 }
 
+/// Which kind of result a music search should ask for.
+///
+/// Each variant is the `params` chip the site's own filter menu sends: the protobuf
+/// `2 { 17 { 1: <kind number> } } 13 { 2: [14, 10, 3, 4, 9, 5] }` in base64url. Only the [`Tracks`](Self::Tracks)
+/// value is the one this crate has always sent, and even that is unverified against a live answer
+/// (docs/MUSIC.md); the other three substitute the kind number. A stale chip costs results, never correctness:
+/// the typed `Music::search_*` methods keep only items of the kind they asked for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SearchKind {
+    Tracks,
+    Albums,
+    Artists,
+    Playlists,
+}
+
+impl SearchKind {
+    /// The `params` value for the `search` body.
+    pub(crate) fn params(self) -> &'static str {
+        match self {
+            SearchKind::Tracks => "EgWKAQIIAWoMEA4QChADEAQQCRAF",
+            SearchKind::Albums => "EgWKAQIIA2oMEA4QChADEAQQCRAF",
+            SearchKind::Artists => "EgWKAQIIBGoMEA4QChADEAQQCRAF",
+            SearchKind::Playlists => "EgWKAQIIBWoMEA4QChADEAQQCRAF",
+        }
+    }
+
+    /// True for the item types this kind asks for.
+    pub(crate) fn holds(self, item: &Item) -> bool {
+        matches!(
+            (self, item),
+            (SearchKind::Tracks, Item::Track(_))
+                | (SearchKind::Albums, Item::Album(_))
+                | (SearchKind::Artists, Item::Artist(_))
+                | (SearchKind::Playlists, Item::Playlist(_))
+        )
+    }
+}
+
 /// A mood or genre button. `params` is the opaque value to hand to `Music::genre_playlists`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Genre {
@@ -212,6 +253,9 @@ pub struct Radio {
     pub lyrics_browse_id: Option<String>,
     /// `MPTRt_…`, present when the related tab exists.
     pub related_browse_id: Option<String>,
+    /// Handle for the next batch of queue entries, for [`radio_more`](crate::music::Music::radio_more).
+    /// `None` when the answer carried none.
+    pub continuation: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

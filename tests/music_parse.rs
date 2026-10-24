@@ -9,6 +9,9 @@ use serde_json::{Value, json};
 const A1: &str = "UCuAXFkgsw1L7xaCfnd5JJOw";
 const A2: &str = "UC1234567890abcdefghij_-";
 const ALB1: &str = "MPREb_9nqEki4ZDpp";
+const RADIO_TOK1: &str = "4qmFsgJfEiBhdXRvTWl4X2NvbnRpbnVhdGlvbl9maXJzdF9iYXRjaA%3D%3D";
+const RADIO_TOK2: &str = "4qmFsgJfEiBhdXRvTWl4X2NvbnRpbnVhdGlvbl9zZWNvbmRfYmF0Y2g%3D%3D";
+const HOME_TOK: &str = "4qmFsgJhEiIZRkVtdXNpY19ob21lX2NvbnRpbnVhdGlvbl90b2tlbg%3D%3D";
 
 fn load(name: &str) -> Value {
     let path = format!("{}/tests/fixtures/music_handwritten_{name}.json", env!("CARGO_MANIFEST_DIR"));
@@ -62,6 +65,53 @@ fn search_empty_and_wrong_shape() {
 }
 
 #[test]
+fn search_items_mixes_rows_and_cards_in_document_order() {
+    let page = parse::search_items(&load("search_albums")).unwrap();
+    let ids: Vec<_> = page
+        .items
+        .iter()
+        .filter_map(|i| match i {
+            Item::Album(a) => Some(a.id.as_str()),
+            _ => None,
+        })
+        .collect();
+    // the "top result" row sits outside any shelf, then the shelf's cards
+    assert_eq!(ids, ["MPREb_TopAlbum01", "MPREb_CardAlbum2", "MPREb_CardAlbum3"]);
+    assert_eq!(page.continuation.as_deref(), Some("TOKEN_ALBUM_MORE"));
+
+    let Item::Album(top) = &page.items[0] else { panic!("an album row") };
+    assert_eq!(top.title, "Greatest Hits");
+    assert_eq!(top.kind, AlbumKind::Album);
+    assert_eq!(top.year, Some(2019));
+    assert_eq!(names(&top.artists), ["Example Artist"]);
+    let Item::Album(single) = &page.items[2] else { panic!("an album card") };
+    assert_eq!(single.kind, AlbumKind::Single);
+    // the artist card with an unusable id in that shelf is not an album
+    assert_eq!(page.items.len(), 3);
+
+    let artists = parse::search_items(&load("search_artists")).unwrap();
+    // the row with an unusable channel id is gone; the other shelf's album row is still an item
+    assert_eq!(artists.items.len(), 3);
+    assert!(matches!(artists.items[0], Item::Artist(_)));
+    assert_eq!(artists.continuation.as_deref(), Some("TOKEN_ARTIST_MORE"));
+
+    let lists = parse::search_items(&load("search_playlists")).unwrap();
+    assert_eq!(lists.items.len(), 2, "the card without an endpoint is gone");
+    let Item::Playlist(first) = &lists.items[0] else { panic!("a playlist card") };
+    assert_eq!(first.id, "PLOne1234567890abc");
+    assert_eq!(first.count_text.as_deref(), Some("25 songs"));
+    let Item::Playlist(second) = &lists.items[1] else { panic!("a playlist card") };
+    assert_eq!(second.id, "RDAMVMaqz-KE-bpKQ");
+    assert_eq!(lists.continuation.as_deref(), Some("TOKEN_PLAYLIST_MORE"));
+
+    assert_eq!(parse::search_items(&json!({"hello": 1})), Err(Error::Parse));
+    assert_eq!(parse::search_items(&json!(null)), Err(Error::Parse));
+    // an answer with the right top-level key and nothing music-like in it is an empty page, not an error
+    let empty = parse::search_items(&json!({"contents": {"sectionListRenderer": {"contents": []}}})).unwrap();
+    assert!(empty.items.is_empty() && empty.continuation.is_none());
+}
+
+#[test]
 fn continuation_pages_in_both_shapes() {
     let legacy = parse::track_page(&load("search_more_legacy")).unwrap();
     assert_eq!(legacy.items.len(), 1);
@@ -105,6 +155,47 @@ fn radio_queue_and_tab_ids() {
     assert_eq!(none.queue.len(), 2);
     assert_eq!((none.lyrics_browse_id, none.related_browse_id), (None, None));
     assert_eq!(parse::radio(&json!({"contents": {}})), Err(Error::Parse));
+
+    // the panel's last entry is the handle for the next batch of queue rows
+    assert_eq!(r.continuation.as_deref(), Some(RADIO_TOK1));
+    assert_eq!(none.continuation, None);
+}
+
+#[test]
+fn radio_more_appends_rows_and_skips_counterparts() {
+    let page = parse::radio_page(&load("next_radio_more")).unwrap();
+    let ids: Vec<_> = page.items.iter().map(|t| t.id.as_str()).collect();
+    // the wrapper's counterpart ("zzzcounter1") is a related video, not a queue entry
+    assert_eq!(ids, ["aqz-KE-bpKQ", "nnnnnnnnnn2", "mmmmmmmmmm3"]);
+    assert_eq!(page.continuation.as_deref(), Some(RADIO_TOK2));
+    assert_eq!(page.items[0].duration_ms, Some(225_000));
+
+    // a page that appended nothing is a parse error, not an empty success
+    assert_eq!(parse::radio_page(&json!({"onResponseReceivedActions": [{"x": 1}]})), Err(Error::Parse));
+    assert_eq!(parse::radio_page(&json!({"hello": 1})), Err(Error::Parse));
+}
+
+#[test]
+fn home_feed_shelves_and_continuation() {
+    let page = parse::home_page(&load("home")).unwrap();
+    let titles: Vec<_> = page.items.iter().map(|s| s.title.as_deref().unwrap_or("")).collect();
+    assert_eq!(titles, ["Quick picks", "New releases for you", "Listen again"]);
+    assert_eq!(page.items[0].items.len(), 2);
+    assert!(page.items[0].items.iter().all(|i| matches!(i, Item::Track(_))), "rows are tracks");
+    // a card shelf is whatever the cards are: two albums plus a stray video
+    assert_eq!(page.items[1].items.len(), 3);
+    assert_eq!(page.items[1].items.iter().filter(|i| matches!(i, Item::Album(_))).count(), 2);
+    assert!(page.items[2].items.iter().all(|i| matches!(i, Item::Track(_))), "video cards become tracks");
+    assert_eq!(page.continuation.as_deref(), Some(HOME_TOK));
+
+    let more = parse::home_page(&load("home_more")).unwrap();
+    assert_eq!(more.items.len(), 2);
+    assert_eq!(more.items[0].title.as_deref(), Some("More of what you like"));
+    // an empty token in continuations is dropped rather than handed back
+    assert_eq!(more.continuation, None);
+
+    assert_eq!(parse::home_page(&json!({"contents": {"sectionListRenderer": {"contents": []}}})), Err(Error::Parse));
+    assert_eq!(parse::home_page(&json!({"hello": 1})), Err(Error::Parse));
 }
 
 #[test]
@@ -146,6 +237,9 @@ fn album_new_layout() {
     assert_eq!(a.tracks[0].album.as_ref().unwrap().id.as_deref(), Some(ALB1));
     assert_eq!(names(&a.tracks[1].artists), ["Guest Two"]);
     assert_eq!(a.duration_ms, Some(225_000 + 200_000));
+    // the handle sits in the album's own track shelf and is handed to album_more unchanged
+    assert_eq!(a.continuation.as_deref(), Some("4qmFsgKcEiYYRkVtdXNpY19hbGJ1bV90b2tlbl9mb3JfcGF0Y2hfdGVzdCUzRCUzRA=="));
+    assert!(innerlight::music::ids::is_continuation_token(a.continuation.as_deref().unwrap()));
 }
 
 #[test]
@@ -156,6 +250,7 @@ fn album_legacy_layout() {
     assert_eq!(a.tracks.len(), 1);
     assert_eq!(a.track_count, Some(1));
     assert_eq!(a.tracks[0].duration_ms, Some(181_000));
+    assert_eq!(a.continuation, None); // a one-page album listing answers without a handle
     assert_eq!(parse::album(&json!({"contents": {}}), ALB1), Err(Error::Parse));
 }
 

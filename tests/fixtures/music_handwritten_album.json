@@ -310,6 +310,19 @@
            }
           }
          }
+        ],
+        "continuations": [
+         {
+          "nextContinuationData": {
+           "continuation": "4qmFsgKcEiYYRkVtdXNpY19hbGJ1bV90b2tlbl9mb3JfcGF0Y2hfdGVzdCUzRCUzRA==",
+           "clickCommand": {
+            "browseEndpoint": {
+             "browseId": "MPREb_examplealbumid",
+             "continuation": "4qmFsgKcEiYYRkVtdXNpY19hbGJ1bV90b2tlbl9mb3JfcGF0Y2hfdGVzdCUzRCUzRA=="
+            }
+           }
+          }
+         }
         ]
        }
       },

@@ -61,10 +61,22 @@ fn run_all(v: &Value) {
         p.items.iter().for_each(check_track);
         assert!(p.continuation.as_deref().is_none_or(is_continuation_token));
     }
+    if let Ok(p) = parse::search_items(v) {
+        p.items.iter().for_each(check_item);
+        assert!(p.continuation.as_deref().is_none_or(is_continuation_token));
+    }
     let _ = parse::track_page(v).map(|p| p.items.iter().for_each(check_track));
+    if let Ok(p) = parse::radio_page(v) {
+        p.items.iter().for_each(check_track);
+        assert!(p.continuation.as_deref().is_none_or(is_continuation_token));
+    }
+    for s in &parse::home_page(v).map(|p| p.items).unwrap_or_default() {
+        s.items.iter().for_each(check_item);
+    }
     let _ = parse::search_suggestions(v);
     if let Ok(r) = parse::radio(v) {
         r.queue.iter().for_each(check_track);
+        assert!(r.continuation.as_deref().is_none_or(is_continuation_token));
     }
     let _ = parse::lyrics(v);
     if let Ok(a) = parse::album(v, "MPREb_9nqEki4ZDpp") {

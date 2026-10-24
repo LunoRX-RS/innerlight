@@ -70,10 +70,117 @@ impl<'a> Music<'a> {
         parse::track_page(&self.client.post(ClientKind::WebMusic, "search", json!({"continuation": t})).await?)
     }
 
+    /// A search for one kind of item, mixed page in document order: rows and cards of the filtered kind plus a
+    /// "top result". The kind only selects the `params` chip; items of another kind are dropped.
+    pub async fn search_items(&self, query: &str, kind: SearchKind) -> Result<Page<Item>, Error> {
+        let q = check_text(query)?;
+        self.search_filtered(json!({"query": q, "params": kind.params()}), kind).await
+    }
+
+    /// Next page of a [`search_items`](Self::search_items) page. Nothing is filtered here: the handle carries the
+    /// request, and a generic caller should see whatever comes back.
+    pub async fn search_items_more(&self, continuation: &str) -> Result<Page<Item>, Error> {
+        let t = check_token(continuation)?;
+        let v = self.client.post(ClientKind::WebMusic, "search", json!({"continuation": t})).await?;
+        parse::search_items(&v)
+    }
+
+    /// Album search, first page.
+    pub async fn search_albums(&self, query: &str) -> Result<Page<AlbumSummary>, Error> {
+        self.search_as_albums(json!({"query": check_text(query)?, "params": SearchKind::Albums.params()})).await
+    }
+
+    /// Next page of a [`search_albums`](Self::search_albums) page.
+    pub async fn search_albums_more(&self, continuation: &str) -> Result<Page<AlbumSummary>, Error> {
+        self.search_as_albums(json!({"continuation": check_token(continuation)?})).await
+    }
+
+    /// Artist (channel) search, first page.
+    pub async fn search_artists(&self, query: &str) -> Result<Page<ArtistSummary>, Error> {
+        self.search_as_artists(json!({"query": check_text(query)?, "params": SearchKind::Artists.params()})).await
+    }
+
+    /// Next page of a [`search_artists`](Self::search_artists) page.
+    pub async fn search_artists_more(&self, continuation: &str) -> Result<Page<ArtistSummary>, Error> {
+        self.search_as_artists(json!({"continuation": check_token(continuation)?})).await
+    }
+
+    /// Playlist search, first page.
+    pub async fn search_playlists(&self, query: &str) -> Result<Page<PlaylistSummary>, Error> {
+        self.search_as_playlists(json!({"query": check_text(query)?, "params": SearchKind::Playlists.params()})).await
+    }
+
+    /// Next page of a [`search_playlists`](Self::search_playlists) page.
+    pub async fn search_playlists_more(&self, continuation: &str) -> Result<Page<PlaylistSummary>, Error> {
+        self.search_as_playlists(json!({"continuation": check_token(continuation)?})).await
+    }
+
+    /// Next page of an [`album`](Self::album)'s track list, from [`Album::continuation`]. The answer is a plain row
+    /// page like a playlist continuation.
+    pub async fn album_more(&self, continuation: &str) -> Result<Page<Track>, Error> {
+        self.playlist_more(continuation).await
+    }
+
+    async fn search_filtered(&self, body: Value, kind: SearchKind) -> Result<Page<Item>, Error> {
+        let mut page = self.search_raw(body).await?;
+        page.items.retain(|item| kind.holds(item));
+        Ok(page)
+    }
+
+    async fn search_raw(&self, body: Value) -> Result<Page<Item>, Error> {
+        let v = self.client.post(ClientKind::WebMusic, "search", body).await?;
+        parse::search_items(&v)
+    }
+
+    /// One page narrowed to a single item type. A card of another kind is dropped, not converted.
+    async fn search_only<T>(
+        &self,
+        body: Value,
+        kind: SearchKind,
+        take: fn(Item) -> Option<T>,
+    ) -> Result<Page<T>, Error> {
+        let page = self.search_filtered(body, kind).await?;
+        Ok(Page { items: page.items.into_iter().filter_map(take).collect(), continuation: page.continuation })
+    }
+
+    async fn search_as_albums(&self, body: Value) -> Result<Page<AlbumSummary>, Error> {
+        self.search_only(body, SearchKind::Albums, |i| match i {
+            Item::Album(a) => Some(a),
+            _ => None,
+        })
+        .await
+    }
+
+    async fn search_as_artists(&self, body: Value) -> Result<Page<ArtistSummary>, Error> {
+        self.search_only(body, SearchKind::Artists, |i| match i {
+            Item::Artist(a) => Some(a),
+            _ => None,
+        })
+        .await
+    }
+
+    async fn search_as_playlists(&self, body: Value) -> Result<Page<PlaylistSummary>, Error> {
+        self.search_only(body, SearchKind::Playlists, |i| match i {
+            Item::Playlist(p) => Some(p),
+            _ => None,
+        })
+        .await
+    }
+
     /// Autocomplete strings for a partial query.
     pub async fn search_suggestions(&self, input: &str) -> Result<Vec<String>, Error> {
         let q = check_text(input)?;
         let v = self.client.post(ClientKind::WebMusic, "music/get_search_suggestions", json!({"input": q})).await?;
+        parse::search_suggestions(&v)
+    }
+
+    /// [`search_suggestions`](Self::search_suggestions) sent signed in, which is the only way history entries
+    /// (`historySuggestionRenderer`) can appear. `Error::Unauthenticated` without a `SAPISID` cookie, and then
+    /// nothing is sent.
+    pub async fn search_suggestions_authed(&self, input: &str) -> Result<Vec<String>, Error> {
+        let q = check_text(input)?;
+        let v =
+            self.client.post_authed(ClientKind::WebMusic, "music/get_search_suggestions", json!({"input": q})).await?;
         parse::search_suggestions(&v)
     }
 
@@ -90,6 +197,13 @@ impl<'a> Music<'a> {
             "tunerSettingValue": "AUTOMIX_SETTING_NORMAL",
         });
         parse::radio(&self.client.post(ClientKind::WebMusic, "next", body).await?)
+    }
+
+    /// Next queue entries of a radio, from [`Radio::continuation`]. The tab ids are not repeated on these pages, so
+    /// this returns the rows only.
+    pub async fn radio_more(&self, continuation: &str) -> Result<Page<Track>, Error> {
+        let t = check_token(continuation)?;
+        parse::radio_page(&self.client.post(ClientKind::WebMusic, "next", json!({"continuation": t})).await?)
     }
 
     // ------------------------------------------------------------ 3. album, artist, playlist
@@ -118,7 +232,30 @@ impl<'a> Music<'a> {
         parse::track_page(&self.browse(json!({"continuation": check_token(continuation)?})).await?)
     }
 
-    // ------------------------------------------------------------ 4. explore
+    // ------------------------------------------------------------ 4. home feed and explore
+
+    /// The home feed sent anonymously: generic shelves rather than a personalized mix. [`Page::items`] are the shelves
+    /// in document order; hand [`Page::continuation`] to [`home_more`](Self::home_more) for the next batch.
+    pub async fn home(&self) -> Result<Page<Section>, Error> {
+        parse::home_page(&self.browse(json!({"browseId": "FEmusic_home"})).await?)
+    }
+
+    /// The home feed signed in, which is the one the site personalizes. `Error::Unauthenticated` without a cookie.
+    pub async fn home_authed(&self) -> Result<Page<Section>, Error> {
+        parse::home_page(&self.browse_authed(json!({"browseId": "FEmusic_home"})).await?)
+    }
+
+    /// Next shelves of [`home`](Self::home).
+    pub async fn home_more(&self, continuation: &str) -> Result<Page<Section>, Error> {
+        let t = check_token(continuation)?;
+        parse::home_page(&self.browse(json!({"continuation": t})).await?)
+    }
+
+    /// Next shelves of [`home_authed`](Self::home_authed).
+    pub async fn home_more_authed(&self, continuation: &str) -> Result<Page<Section>, Error> {
+        let t = check_token(continuation)?;
+        parse::home_page(&self.browse_authed(json!({"continuation": t})).await?)
+    }
 
     /// Charts for a country (`"ZZ"` is global). `None` asks for the service default.
     pub async fn charts(&self, country: Option<&str>) -> Result<Vec<Section>, Error> {

@@ -515,9 +515,14 @@ pub(crate) fn panel_track(r: &Value) -> Option<Track> {
 // ---------------------------------------------------------------- shelves and continuations
 
 fn shelf_title(n: &Value) -> Option<String> {
-    ["header.musicCarouselShelfBasicHeaderRenderer.title", "header.gridHeaderRenderer.title", "title"]
-        .iter()
-        .find_map(|p| jsonx::get(n, p).and_then(jsonx::text))
+    [
+        "header.musicCarouselShelfBasicHeaderRenderer.title",
+        "header.musicShelfHeaderRenderer.title",
+        "header.gridHeaderRenderer.title",
+        "title",
+    ]
+    .iter()
+    .find_map(|p| jsonx::get(n, p).and_then(jsonx::text))
 }
 
 /// Every shelf in document order, with its items. Empty shelves are dropped. Does not look inside a shelf for
