@@ -2,6 +2,8 @@
 
 mod decipher_common;
 use decipher_common::*;
+mod common;
+use common::builder;
 use innerlight::decipher::{DecipherError, MAX_SCRIPT_BYTES, PlayerScript, ScriptCache, Which};
 use innerlight::{Client, Error, FixtureTransport};
 use std::sync::Arc;
@@ -12,7 +14,7 @@ const LOADER: &str =
 const SCRIPT_PATH: &str = "s/player/test1234/player_ias.vflset/en_US/base.js";
 
 fn client(t: &Arc<FixtureTransport>) -> Client {
-    Client::builder().transport(t.clone()).build().unwrap()
+    builder().transport(t.clone()).build().unwrap()
 }
 
 fn transport() -> Arc<FixtureTransport> {

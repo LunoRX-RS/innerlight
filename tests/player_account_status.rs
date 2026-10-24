@@ -1,5 +1,7 @@
 //! Regression: a 2xx answer carrying `"status": "STATUS_FAILED"` is a refusal, not a success (src/account.rs).
 
+mod common;
+use common::builder;
 use innerlight::account::Account;
 use innerlight::{Client, Error, FixtureTransport};
 use serde_json::json;
@@ -9,7 +11,7 @@ const VID: &str = "dQw4w9WgXcQ";
 const PL: &str = "PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf";
 
 fn client(t: FixtureTransport) -> Client {
-    let c = Client::builder().transport(Arc::new(t)).build().unwrap();
+    let c = builder().transport(Arc::new(t)).build().unwrap();
     c.set_cookie("SAPISID=abc123; SID=x").unwrap();
     c
 }

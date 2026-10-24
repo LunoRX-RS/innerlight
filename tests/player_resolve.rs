@@ -1,6 +1,8 @@
 //! Offline tests for `innerlight::player::Player`: request shape, typed outcomes, selection from fixtures,
 //! the Decipher plumbing. Fixtures are hand-authored (see docs/PLAYER.md).
 
+mod common;
+use common::builder;
 use innerlight::player::{
     Decipher, Player, PlayerError, Quality, ResolveOptions, Resolved, StreamSource, UnplayableReason,
 };
@@ -16,7 +18,7 @@ fn fixture(name: &str) -> String {
 
 fn client_for(name: &str) -> (Client, Arc<FixtureTransport>) {
     let t = Arc::new(FixtureTransport::new().with_file("player", fixture(name)));
-    (Client::builder().transport(t.clone()).build().unwrap(), t)
+    (builder().transport(t.clone()).build().unwrap(), t)
 }
 
 fn opts(quality: Quality) -> ResolveOptions {
@@ -166,7 +168,7 @@ async fn ok_status_with_streams_but_challenge_text_is_still_a_challenge() {
     let mut v: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(fixture("ok_direct")).unwrap()).unwrap();
     v["playabilityStatus"] = json!({"status": "LOGIN_REQUIRED", "reason": "Sign in to confirm you're not a bot"});
-    let c = Client::builder().build().unwrap();
+    let c = builder().build().unwrap();
     assert_eq!(
         Player::new(&c).resolve_response(&v, Quality::High),
         Err(PlayerError::LoginRequired { bot_check: true })
@@ -176,11 +178,11 @@ async fn ok_status_with_streams_but_challenge_text_is_still_a_challenge() {
 #[tokio::test]
 async fn transport_errors_pass_through() {
     let t = Arc::new(FixtureTransport::new().with_raw("player", 429, b"{}"));
-    let c = Client::builder().transport(t).build().unwrap();
+    let c = builder().transport(t).build().unwrap();
     let e = Player::new(&c).resolve(VID, opts(Quality::High)).await.unwrap_err();
     assert!(matches!(e, PlayerError::Transport(Error::RateLimited { .. })));
     let t = Arc::new(FixtureTransport::new().with_raw("player", 200, b"<html>"));
-    let c = Client::builder().transport(t).build().unwrap();
+    let c = builder().transport(t).build().unwrap();
     assert_eq!(Player::new(&c).resolve(VID, opts(Quality::High)).await, Err(PlayerError::Transport(Error::Parse)));
 }
 
@@ -232,7 +234,7 @@ async fn direct_stream_with_decipher_gets_throttle_fix() {
 
 #[tokio::test]
 async fn mixed_response_without_decipher_falls_back_to_direct() {
-    let c = Client::builder().build().unwrap();
+    let c = builder().build().unwrap();
     let v = json!({"playabilityStatus": {"status": "OK"}, "streamingData": {"adaptiveFormats": [
         {"itag": 251, "mimeType": "audio/webm; codecs=\"opus\"", "bitrate": 160000, "contentLength": "10",
          "signatureCipher": "s=AB&sp=sig&url=https%3A%2F%2Fa.googlevideo.com%2Fv%3Fitag%3D251"},
@@ -246,7 +248,7 @@ async fn mixed_response_without_decipher_falls_back_to_direct() {
 
 #[tokio::test]
 async fn unsafe_urls_are_never_returned() {
-    let c = Client::builder().build().unwrap();
+    let c = builder().build().unwrap();
     for url in [
         "http://a.googlevideo.com/v",
         "https://evil.example/v",
@@ -262,7 +264,7 @@ async fn unsafe_urls_are_never_returned() {
 #[tokio::test]
 async fn malformed_and_empty_answers() {
     assert_eq!(outcome("malformed").await, Err(PlayerError::NoAudio));
-    let c = Client::builder().build().unwrap();
+    let c = builder().build().unwrap();
     let p = Player::new(&c);
     // OK without streamingData, DRM-only, video-only
     assert_eq!(

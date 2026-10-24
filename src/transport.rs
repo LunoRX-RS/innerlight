@@ -7,7 +7,7 @@ use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Mutex;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
@@ -16,7 +16,59 @@ pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(20);
 /// Default maximum response body size.
 pub const DEFAULT_MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
 
+/// Days since 1970-01-01 for a proleptic Gregorian date (Howard Hinnant's `days_from_civil`).
+fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
+    let y = y - i64::from(m <= 2);
+    let era = if y >= 0 { y } else { y - 399 } / 400;
+    let yoe = y - era * 400;
+    let doy = (153 * (m + if m > 2 { -3 } else { 9 }) + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146097 + doe - 719468
+}
+
+/// Month abbreviations in calendar order, three letters, lower case.
+const MONTHS: [&str; 12] = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+/// `Retry-After` in the two forms the header allows: whole seconds, or an IMF-fixdate
+/// (`Wed, 21 Oct 2015 07:28:00 GMT`). A date in the past, and any negative or unparseable value, is `None`
+/// so the caller falls back to its own backoff. `now` is only used to turn a date into a delay.
+pub fn parse_retry_after(value: &str, now: SystemTime) -> Option<Duration> {
+    let value = value.trim();
+    if !value.is_empty() && value.bytes().all(|b| b.is_ascii_digit()) {
+        return value.parse::<u64>().ok().map(Duration::from_secs);
+    }
+    // `[<wday>,] <dd> <mon> <yyyy> <hh>:<mm>:<ss> <gmt>`; the weekday is redundant and dropped.
+    let mut words = value.split_whitespace().peekable();
+    if words.peek().is_some_and(|t| t.ends_with(',')) {
+        let _ = words.next();
+    }
+    let (day, month, year, time, zone) = (words.next()?, words.next()?, words.next()?, words.next()?, words.next()?);
+    if words.next().is_some()
+        || (!zone.eq_ignore_ascii_case("gmt") && !zone.eq_ignore_ascii_case("utc") && zone != "-0000")
+    {
+        return None;
+    }
+    let day: i64 = day.parse().ok()?;
+    let year: i64 = year.parse().ok()?;
+    let month = month.get(..3)?.to_ascii_lowercase();
+    let m = MONTHS.iter().position(|x| *x == month)? as i64 + 1;
+    let mut nums = time.split(':');
+    let (hh, mm, ss) =
+        (nums.next()?.parse::<i64>().ok()?, nums.next()?.parse::<i64>().ok()?, nums.next()?.parse::<i64>().ok()?);
+    if nums.next().is_some() || !(1..=31).contains(&day) || !(1970..=9999).contains(&year) {
+        return None;
+    }
+    if !(0..=23).contains(&hh) || !(0..=59).contains(&mm) || !(0..=60).contains(&ss) {
+        return None;
+    }
+    let when = days_from_civil(year, m, day) * 86_400 + hh * 3600 + mm * 60 + ss;
+    let now = now.duration_since(UNIX_EPOCH).ok()?.as_secs() as i64;
+    (when > now).then(|| Duration::from_secs((when - now) as u64))
+}
+
 /// A JSON POST. `Debug` hides header values and the body (they can hold cookies and tokens).
+/// `Clone` is for the retry loop, which sends the same request again after a wait; nothing in it borrows.
+#[derive(Clone)]
 pub struct Request {
     pub url: String,
     pub headers: Vec<(String, String)>,
@@ -88,8 +140,7 @@ impl Transport for ReqwestTransport {
                 .headers()
                 .get(reqwest::header::RETRY_AFTER)
                 .and_then(|v| v.to_str().ok())
-                .and_then(|v| v.trim().parse::<u64>().ok())
-                .map(Duration::from_secs);
+                .and_then(|v| parse_retry_after(v, SystemTime::now()));
             if resp.content_length().is_some_and(|n| n > self.max_bytes as u64) {
                 return Err(Error::TooLarge);
             }
@@ -119,6 +170,11 @@ impl ReqwestTransport {
             .await
             .map_err(|_| Error::Network)?;
         let status = resp.status().as_u16();
+        let retry_after = resp
+            .headers()
+            .get(reqwest::header::RETRY_AFTER)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| parse_retry_after(v, SystemTime::now()));
         if resp.content_length().is_some_and(|n| n > self.max_bytes as u64) {
             return Err(Error::TooLarge);
         }
@@ -129,7 +185,7 @@ impl ReqwestTransport {
             }
             body.extend_from_slice(&chunk);
         }
-        Ok(Response { status, retry_after: None, body })
+        Ok(Response { status, retry_after, body })
     }
 }
 
@@ -162,7 +218,18 @@ struct Rule {
     endpoint: String,
     /// When set, the rule only matches requests whose serialized body contains this text.
     contains: Option<String>,
-    queue: VecDeque<(u16, Vec<u8>)>,
+    queue: VecDeque<(u16, Option<Duration>, Vec<u8>)>,
+}
+
+impl Rule {
+    /// The next queued answer; the last one repeats when the queue is one deep.
+    fn next(&mut self) -> (u16, Option<Duration>, Vec<u8>) {
+        if self.queue.len() > 1 {
+            self.queue.pop_front().expect("non-empty")
+        } else {
+            self.queue.front().cloned().expect("non-empty")
+        }
+    }
 }
 
 /// Offline transport for tests: returns canned answers by endpoint and records every request.
@@ -183,35 +250,48 @@ impl FixtureTransport {
 
     /// Answer `endpoint` with 200 and this JSON (appended to the endpoint's rule if it has one without a body filter).
     pub fn with(self, endpoint: &str, json: Value) -> Self {
-        self.rule(endpoint, None, 200, serde_json::to_vec(&json).expect("json serializes"))
+        self.rule(endpoint, None, 200, None, serde_json::to_vec(&json).expect("json serializes"))
     }
 
     /// Like [`with`](Self::with), but only for requests whose body text contains `needle`
     /// (e.g. a continuation token). Put these before the catch-all `with` for the same endpoint.
     pub fn with_match(self, endpoint: &str, needle: &str, json: Value) -> Self {
-        self.rule(endpoint, Some(needle), 200, serde_json::to_vec(&json).expect("json serializes"))
+        self.rule(endpoint, Some(needle), 200, None, serde_json::to_vec(&json).expect("json serializes"))
     }
 
     /// Answer `endpoint` with a raw status and body (for error and malformed-JSON tests).
     pub fn with_raw(self, endpoint: &str, status: u16, body: &[u8]) -> Self {
-        self.rule(endpoint, None, status, body.to_vec())
+        self.rule(endpoint, None, status, None, body.to_vec())
+    }
+
+    /// Like [`with_raw`](Self::with_raw), but the answer carries a `Retry-After` delay. Use it to test that a
+    /// rate-limited call waits exactly that long.
+    pub fn with_retry_after(self, endpoint: &str, status: u16, retry_after: Duration, body: &[u8]) -> Self {
+        self.rule(endpoint, None, status, Some(retry_after), body.to_vec())
     }
 
     /// Answer `endpoint` with 200 and the contents of a JSON file such as `tests/fixtures/x.json`.
     pub fn with_file(self, endpoint: &str, path: impl AsRef<std::path::Path>) -> Self {
         let body = std::fs::read(path.as_ref()).expect("fixture file readable");
-        self.rule(endpoint, None, 200, body)
+        self.rule(endpoint, None, 200, None, body)
     }
 
-    fn rule(self, endpoint: &str, contains: Option<&str>, status: u16, body: Vec<u8>) -> Self {
+    fn rule(
+        self,
+        endpoint: &str,
+        contains: Option<&str>,
+        status: u16,
+        retry_after: Option<Duration>,
+        body: Vec<u8>,
+    ) -> Self {
         {
             let mut rules = self.rules.lock().unwrap();
             match rules.iter_mut().find(|r| r.endpoint == endpoint && r.contains.as_deref() == contains) {
-                Some(r) => r.queue.push_back((status, body)),
+                Some(r) => r.queue.push_back((status, retry_after, body)),
                 None => rules.push(Rule {
                     endpoint: endpoint.to_owned(),
                     contains: contains.map(str::to_owned),
-                    queue: VecDeque::from([(status, body)]),
+                    queue: VecDeque::from([(status, retry_after, body)]),
                 }),
             }
         }
@@ -243,12 +323,8 @@ impl Transport for FixtureTransport {
                 .iter_mut()
                 .find(|r| r.endpoint == endpoint && r.contains.as_deref().is_none_or(|n| body_text.contains(n)))
                 .unwrap_or_else(|| panic!("FixtureTransport: no fixture for endpoint `{endpoint}`"));
-            let (status, body) = if rule.queue.len() > 1 {
-                rule.queue.pop_front().expect("non-empty")
-            } else {
-                rule.queue.front().cloned().expect("non-empty")
-            };
-            Ok(Response { status, retry_after: None, body })
+            let (status, retry_after, body) = rule.next();
+            Ok(Response { status, retry_after, body })
         })
     }
 
@@ -270,12 +346,69 @@ impl Transport for FixtureTransport {
                 .iter_mut()
                 .find(|r| r.endpoint == endpoint)
                 .unwrap_or_else(|| panic!("FixtureTransport: no fixture for GET `{endpoint}`"));
-            let (status, body) = if rule.queue.len() > 1 {
-                rule.queue.pop_front().expect("non-empty")
-            } else {
-                rule.queue.front().cloned().expect("non-empty")
-            };
-            Ok(Response { status, retry_after: None, body })
+            let (status, retry_after, body) = rule.next();
+            Ok(Response { status, retry_after, body })
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `Wed, 21 Oct 2015 07:28:00 GMT`, the example date from the HTTP spec.
+    fn now() -> SystemTime {
+        UNIX_EPOCH + Duration::from_secs(1_445_412_480)
+    }
+
+    #[test]
+    fn retry_after_delta_seconds() {
+        assert_eq!(parse_retry_after("120", now()), Some(Duration::from_secs(120)));
+        assert_eq!(parse_retry_after(" 0 ", now()), Some(Duration::ZERO));
+        assert_eq!(parse_retry_after("", now()), None);
+        assert_eq!(parse_retry_after("-5", now()), None);
+        assert_eq!(parse_retry_after("1d", now()), None);
+        assert_eq!(parse_retry_after("Wed, 21 Oct 2015", now()), None);
+    }
+
+    #[test]
+    fn retry_after_imf_fixdate() {
+        let at = |s: &str| parse_retry_after(s, now());
+        assert_eq!(at("Wed, 21 Oct 2015 07:28:30 GMT"), Some(Duration::from_secs(30)));
+        assert_eq!(at("Wed, 21 Oct 2015 07:29:00 utc"), Some(Duration::from_secs(60)));
+        assert_eq!(at("21 Oct 2015 07:28:30 -0000"), Some(Duration::from_secs(30))); // weekday omitted
+        assert_eq!(at("Wed, 21 Oct 2015 07:28:00 GMT"), None); // now, not later
+        assert_eq!(at("Wed, 21 Oct 2015 07:27:00 GMT"), None); // in the past
+    }
+
+    #[test]
+    fn retry_after_rejects_malformed_dates() {
+        let at = |s: &str| parse_retry_after(s, now());
+        for bad in [
+            "Wed, 21 Xyz 2015 07:28:30 GMT",
+            "Wed, 32 Oct 2015 07:28:30 GMT",
+            "Wed, 00 Oct 2015 07:28:30 GMT",
+            "Wed, 21 Oct 1969 07:28:30 GMT",
+            "Wed, 21 Oct 2015 24:00:00 GMT",
+            "Wed, 21 Oct 2015 07:60:00 GMT",
+            "Wed, 21 Oct 2015 07:28:30 PDT",
+            "Wed, 21 Oct 2015 07:28:30 GMT extra",
+            "Wed, 21 Oct 2015 07:28 GMT",
+        ] {
+            assert_eq!(at(bad), None, "{bad:?}");
+        }
+    }
+
+    #[test]
+    fn fixdate_crosses_month_and_leap_day() {
+        let at = |s: &str| parse_retry_after(s, UNIX_EPOCH + Duration::from_secs(1_648_512_000)); // 2022-03-29 00:00
+        assert_eq!(at("Tue, 29 Mar 2022 00:00:30 GMT"), Some(Duration::from_secs(30)));
+        assert_eq!(at("Wed, 30 Mar 2022 00:00:00 GMT"), Some(Duration::from_secs(86_400)));
+        assert_eq!(at("Fri, 01 Apr 2022 00:00:00 GMT"), Some(Duration::from_secs(3 * 86_400)));
+        // 2024 was a leap year: Feb 29 exists and Mar 1 follows it.
+        let leap = |s: &str| parse_retry_after(s, UNIX_EPOCH + Duration::from_secs(1_708_992_000)); // 2024-02-27
+        assert_eq!(leap("Wed, 28 Feb 2024 00:00:00 GMT"), Some(Duration::from_secs(86_400)));
+        assert_eq!(leap("Thu, 29 Feb 2024 00:00:00 GMT"), Some(Duration::from_secs(2 * 86_400)));
+        assert_eq!(leap("Fri, 01 Mar 2024 00:00:00 GMT"), Some(Duration::from_secs(3 * 86_400)));
     }
 }

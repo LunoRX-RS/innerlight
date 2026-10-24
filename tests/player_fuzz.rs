@@ -1,8 +1,10 @@
 //! No input makes the player module panic: truncated bodies, mutated JSON, hostile shapes.
 
+mod common;
+use common::builder;
+use innerlight::FixtureTransport;
 use innerlight::player::parse::{parse_playability, parse_streaming_data};
 use innerlight::player::{Player, Quality, ResolveOptions};
-use innerlight::{Client, FixtureTransport};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -67,7 +69,7 @@ fn mutate(v: &mut Value, r: &mut Rng) {
 
 #[test]
 fn mutated_json_never_panics() {
-    let c = Client::builder().build().unwrap();
+    let c = builder().build().unwrap();
     let p = Player::new(&c);
     let mut rng = Rng(0xDEAD_BEEF_CAFE_F00D);
     for name in FIXTURES {
@@ -88,7 +90,7 @@ fn mutated_json_never_panics() {
 
 #[test]
 fn non_object_roots() {
-    let c = Client::builder().build().unwrap();
+    let c = builder().build().unwrap();
     for v in [json!(null), json!(1), json!("x"), json!([]), json!([{"playabilityStatus": {"status": "OK"}}])] {
         assert!(Player::new(&c).resolve_response(&v, Quality::High).is_err());
     }
@@ -101,7 +103,7 @@ async fn truncated_bodies_are_errors_not_panics() {
         let step = (body.len() / 60).max(1);
         for cut in (0..body.len()).step_by(step) {
             let t = Arc::new(FixtureTransport::new().with_raw("player", 200, &body[..cut]));
-            let c = Client::builder().transport(t).build().unwrap();
+            let c = builder().transport(t).build().unwrap();
             let r = Player::new(&c).resolve("dQw4w9WgXcQ", ResolveOptions::default()).await;
             assert!(r.is_err(), "{name} cut at {cut} of {}", body.len());
         }
@@ -112,7 +114,7 @@ async fn truncated_bodies_are_errors_not_panics() {
 async fn garbage_bodies() {
     for body in [&b""[..], b"null", b"[]", b"{}", b"\xff\xfe\x00", b"{\"playabilityStatus\":", b"\"OK\""] {
         let t = Arc::new(FixtureTransport::new().with_raw("player", 200, body));
-        let c = Client::builder().transport(t).build().unwrap();
+        let c = builder().transport(t).build().unwrap();
         assert!(Player::new(&c).resolve("dQw4w9WgXcQ", ResolveOptions::default()).await.is_err());
     }
 }

@@ -1,7 +1,10 @@
 //! Offline tests for the transport layer. Fixtures are hand-written; no network is used.
 
+mod common;
+
+use common::{builder, builder_with_clock};
 use innerlight::transport::{BoxFuture, Request, Response};
-use innerlight::{Client, ClientKind, Error, FixtureTransport, Transport};
+use innerlight::{Client, ClientKind, Error, FixtureTransport, Policy, Transport};
 use serde_json::{Value, json};
 use std::sync::Arc;
 use std::time::Duration;
@@ -10,7 +13,7 @@ const SEARCH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/handwr
 
 fn client_with(fx: FixtureTransport) -> (Client, Arc<FixtureTransport>) {
     let fx = Arc::new(fx);
-    let client = Client::builder().language("en").country("US").transport(fx.clone()).build().unwrap();
+    let client = builder().language("en").country("US").transport(fx.clone()).build().unwrap();
     (client, fx)
 }
 
@@ -97,6 +100,7 @@ async fn http_statuses_map_to_errors() {
         .with_raw("err_a", 500, b"oops")
         .with_raw("err_b", 503, b"oops")
         .with_raw("missing", 404, b"")
+        .with_raw("challenge", 403, br#"{"error":{"message":"Sign in to confirm you're not a bot"}}"#)
         .with_raw("bad", 200, b"<html>not json")
         .with_raw("empty", 200, b"");
     let (c, _) = client_with(fx);
@@ -107,11 +111,13 @@ async fn http_statuses_map_to_errors() {
     assert_eq!(post("unauth").await, Err(Error::Unauthenticated));
     assert_eq!(post("forbidden").await, Err(Error::Refused));
     assert_eq!(post("limited").await, Err(Error::RateLimited { retry_after: None }));
-    assert_eq!(post("err_a").await, Err(Error::Network));
-    assert_eq!(post("err_b").await, Err(Error::Network));
+    assert_eq!(post("err_a").await, Err(Error::ServerError));
+    assert_eq!(post("err_b").await, Err(Error::ServerError));
     assert_eq!(post("missing").await, Err(Error::Refused));
     assert_eq!(post("bad").await, Err(Error::Parse));
     assert_eq!(post("empty").await, Err(Error::Parse));
+    // The bot challenge is named, and naming it is where the work stops: no retry, no other client identity.
+    assert_eq!(post("challenge").await, Err(Error::BotCheck));
 }
 
 struct Canned(Response);
@@ -132,7 +138,7 @@ impl Transport for Never {
 #[tokio::test]
 async fn retry_after_is_passed_through() {
     let t = Canned(Response { status: 429, retry_after: Some(Duration::from_secs(30)), body: vec![] });
-    let c = Client::builder().transport(Arc::new(t)).build().unwrap();
+    let c = builder().retry_attempts(1).transport(Arc::new(t)).build().unwrap();
     assert_eq!(
         c.post(ClientKind::Web, "browse", json!({})).await,
         Err(Error::RateLimited { retry_after: Some(Duration::from_secs(30)) })
@@ -140,17 +146,120 @@ async fn retry_after_is_passed_through() {
 }
 
 #[tokio::test]
+async fn a_transient_failure_is_resent_and_a_rate_limit_waits_for_what_was_asked() {
+    let fx = Arc::new(
+        FixtureTransport::new()
+            .with_retry_after("browse", 429, Duration::from_secs(7), b"{}")
+            .with("browse", json!({"ok": true})),
+    );
+    let (b, clock) = builder_with_clock();
+    let c = b.language("en").country("US").transport(fx.clone()).build().unwrap();
+    assert_eq!(c.post(ClientKind::Web, "browse", json!({})).await.unwrap()["ok"], true);
+    assert_eq!(fx.requests().len(), 2, "the second send is the retry");
+    // The asked-for wait is kept exactly: not shortened, and no spread added to a delay the service named.
+    assert_eq!(clock.elapsed_ms(), 7_000, "{} ms waited", clock.elapsed_ms());
+}
+
+#[tokio::test]
+async fn a_retry_after_too_long_for_the_budget_stops_instead_of_sending_early() {
+    let fx = Arc::new(
+        FixtureTransport::new()
+            .with_retry_after("browse", 429, Duration::from_secs(30), b"{}")
+            .with("browse", json!({"ok": true})),
+    );
+    let (b, clock) = builder_with_clock();
+    let c = b
+        .transport(fx.clone())
+        .retry_attempts(3)
+        .retry_max_delay(Duration::from_secs(10))
+        .retry_total_budget(Duration::from_secs(20))
+        .build()
+        .unwrap();
+    assert_eq!(
+        c.post(ClientKind::Web, "browse", json!({})).await,
+        Err(Error::RateLimited { retry_after: Some(Duration::from_secs(30)) })
+    );
+    assert_eq!(fx.requests().len(), 1, "30 s was asked and only 20 s of budget is left: waiting 20 would be early");
+    assert_eq!(clock.elapsed_ms(), 0, "nothing is parked partway: the caller gets the seconds to wait itself");
+}
+
+#[tokio::test]
+async fn a_challenge_is_named_and_never_resent() {
+    for (status, body, want) in [
+        (403u16, br#"{"error":{"message":"Sign in to confirm you're not a bot"}}"#.to_vec(), Error::BotCheck),
+        (403, b"{\"error\":{\"message\":\"quota exceeded\"}}".to_vec(), Error::QuotaExceeded),
+        (401, b"{}".to_vec(), Error::Unauthenticated),
+        (404, b"{}".to_vec(), Error::Refused),
+    ] {
+        let fx = Arc::new(FixtureTransport::new().with_raw("browse", status, &body));
+        let c = builder().transport(fx.clone()).build().unwrap();
+        assert_eq!(c.post(ClientKind::Web, "browse", json!({})).await, Err(want), "{status}");
+        assert_eq!(fx.requests().len(), 1, "{want}: no retry, no other client identity, nothing to work around");
+    }
+}
+
+#[tokio::test]
+async fn retries_stop_at_the_attempt_ceiling_and_at_the_budget() {
+    let fx = Arc::new(FixtureTransport::new().with_raw("browse", 500, b"oops"));
+    let (b, clock) = builder_with_clock();
+    let c = b.transport(fx.clone()).retry_attempts(3).build().unwrap();
+    assert_eq!(c.post(ClientKind::Web, "browse", json!({})).await, Err(Error::ServerError));
+    assert_eq!(fx.requests().len(), 3, "three sends, then the answer is reported");
+
+    let fx = Arc::new(FixtureTransport::new().with_raw("browse", 500, b"oops"));
+    let (b, clock2) = builder_with_clock();
+    let c = b
+        .transport(fx.clone())
+        .retry_attempts(8)
+        .requests_per_second(50) // so the only waiting here is the backoff, never the pacing
+        .retry_base_delay(Duration::from_millis(200))
+        .retry_max_delay(Duration::from_millis(400))
+        .retry_total_budget(Duration::from_secs(1))
+        .build()
+        .unwrap();
+    assert_eq!(c.post(ClientKind::Web, "browse", json!({})).await, Err(Error::ServerError));
+    assert!(fx.requests().len() < 8, "{} sends past a 1 s budget", fx.requests().len());
+    assert!(clock2.elapsed_ms() <= 1_000, "no wait is scheduled past the budget");
+    assert!(clock.elapsed_ms() > 0);
+}
+
+#[tokio::test]
+async fn a_backing_off_call_frees_its_concurrency_slot() {
+    // One slot: if the wait held it, the second request could never start and this would hang.
+    let fx = Arc::new(
+        FixtureTransport::new()
+            .with_retry_after("browse", 429, Duration::from_secs(20), b"{}")
+            .with("browse", json!({})),
+    );
+    let c = builder().transport(fx.clone()).max_concurrent_requests(1).build().unwrap();
+    let one = c.post(ClientKind::Web, "browse", json!({}));
+    let two = c.post(ClientKind::Web, "browse", json!({}));
+    let (a, b) = tokio::join!(one, two);
+    assert!(a.is_ok() && b.is_ok(), "{a:?} {b:?}");
+    assert_eq!(fx.requests().len(), 3, "one 429, one unperturbed call, one retry");
+}
+
+#[tokio::test]
+async fn fixture_can_carry_retry_after() {
+    let (c, _) = client_with(FixtureTransport::new().with_retry_after("browse", 429, Duration::from_secs(11), b"{}"));
+    assert_eq!(
+        c.post(ClientKind::Web, "browse", json!({})).await,
+        Err(Error::RateLimited { retry_after: Some(Duration::from_secs(11)) })
+    );
+}
+
+#[tokio::test]
 async fn oversized_body_is_rejected() {
     let big = format!("{{\"x\":\"{}\"}}", "a".repeat(2000));
     let t = Canned(Response { status: 200, retry_after: None, body: big.into_bytes() });
-    let c = Client::builder().max_response_bytes(1000).transport(Arc::new(t)).build().unwrap();
+    let c = builder().max_response_bytes(1000).transport(Arc::new(t)).build().unwrap();
     assert_eq!(c.post(ClientKind::Web, "browse", json!({})).await, Err(Error::TooLarge));
 }
 
 #[tokio::test]
-async fn timeout_maps_to_network() {
-    let c = Client::builder().timeout(Duration::from_millis(30)).transport(Arc::new(Never)).build().unwrap();
-    assert_eq!(c.post(ClientKind::Web, "browse", json!({})).await, Err(Error::Network));
+async fn timeout_maps_to_its_own_error() {
+    let c = builder().retry_attempts(1).timeout(Duration::from_millis(30)).transport(Arc::new(Never)).build().unwrap();
+    assert_eq!(c.post(ClientKind::Web, "browse", json!({})).await, Err(Error::Timeout));
 }
 
 #[tokio::test]
@@ -188,7 +297,24 @@ fn builder_validates_locale_and_debug_is_opaque() {
     assert_eq!(Client::builder().language("e n").build().unwrap_err(), Error::InvalidRequest);
     assert_eq!(Client::builder().country("USA").build().unwrap_err(), Error::InvalidRequest);
     let c = Client::builder().build().unwrap();
+    assert_eq!(c.policy(), Policy::polite(), "politeness is the default, not opt-in");
     c.set_cookie("SAPISID=topsecret").unwrap();
     assert_eq!(format!("{c:?}"), "Client(..)");
     assert!(c.set_cookie("a\nb").is_err());
+}
+
+#[test]
+fn builder_rejects_politeness_settings_that_could_deadlock_or_spin() {
+    for bad in [
+        Client::builder().retry_attempts(0),
+        Client::builder().retry_attempts(9),
+        Client::builder().requests_per_second(0),
+        Client::builder().max_concurrent_requests(0),
+        Client::builder().retry_base_delay(Duration::ZERO),
+        Client::builder().retry_base_delay(Duration::from_secs(60)), // above the max delay
+        Client::builder().retry_total_budget(Duration::from_secs(5)), // below the max delay
+    ] {
+        assert_eq!(bad.build().unwrap_err(), Error::InvalidRequest);
+    }
+    assert_eq!(Client::builder().policy(Policy::no_retry()).build().unwrap().policy().attempts, 1);
 }

@@ -1,6 +1,7 @@
 //! The InnerTube client: builds the request context, validates the endpoint, signs when asked, maps failures.
 
 use crate::Error;
+use crate::policy::{Attempt, Clock, Gate, Policy, TokioClock};
 use crate::session::Session;
 use crate::transport::{DEFAULT_MAX_RESPONSE_BYTES, DEFAULT_TIMEOUT, Request, ReqwestTransport, Transport};
 use serde_json::{Value, json};
@@ -88,7 +89,7 @@ pub fn validate_endpoint(endpoint: &str) -> Result<(), Error> {
 /// Hosts a static GET may go to.
 const STATIC_HOSTS: [&str; 4] = ["www.youtube.com", "youtube.com", "music.youtube.com", "s.ytimg.com"];
 
-/// `https` to one of [`STATIC_HOSTS`], at most 2 KiB, no userinfo, port or fragment.
+/// `https` to one of the four YouTube asset hosts (the private `STATIC_HOSTS` list), at most 2 KiB, no userinfo, port or fragment.
 pub fn validate_static_url(url: &str) -> Result<(), Error> {
     let u = reqwest::Url::parse(url).map_err(|_| Error::InvalidRequest)?;
     let ok = url.len() <= 2048
@@ -112,6 +113,7 @@ struct Inner {
     gl: String,
     timeout: Duration,
     max_bytes: usize,
+    gate: Gate,
     state: RwLock<State>,
 }
 
@@ -131,6 +133,8 @@ pub struct ClientBuilder {
     timeout: Duration,
     max_bytes: usize,
     transport: Option<Arc<dyn Transport>>,
+    policy: Policy,
+    clock: Option<Arc<dyn Clock>>,
 }
 
 impl ClientBuilder {
@@ -164,6 +168,57 @@ impl ClientBuilder {
         self
     }
 
+    /// Total sends per call, including the first. `1` turns retrying off; the ceiling is 8. Only transient
+    /// failures are ever sent again, so this never retries a sign-in, a refusal or a challenge.
+    pub fn retry_attempts(mut self, attempts: u8) -> Self {
+        self.policy.attempts = attempts;
+        self
+    }
+
+    /// The wait before the second send; each later wait doubles from here.
+    pub fn retry_base_delay(mut self, delay: Duration) -> Self {
+        self.policy.base_delay = delay;
+        self
+    }
+
+    /// Ceiling for a wait this crate computes itself. A `Retry-After` the service sent is kept as stated; if it does
+    /// not fit the remaining budget, the call stops instead of sending early.
+    pub fn retry_max_delay(mut self, delay: Duration) -> Self {
+        self.policy.max_delay = delay;
+        self
+    }
+
+    /// Ceiling for the whole call: sending, waiting and reading.
+    pub fn retry_total_budget(mut self, budget: Duration) -> Self {
+        self.policy.total_budget = budget;
+        self
+    }
+
+    /// Sends in flight at once for this client (1..=64).
+    pub fn max_concurrent_requests(mut self, max: usize) -> Self {
+        self.policy.max_concurrent = max;
+        self
+    }
+
+    /// Sends per second for this client (1..=50). Bursts up to this size are free; after that the client paces.
+    pub fn requests_per_second(mut self, rps: u32) -> Self {
+        self.policy.requests_per_second = rps;
+        self
+    }
+
+    /// Replace the whole politeness policy, e.g. [`Policy::no_retry`]. `build` rejects the nonsensical ones.
+    pub fn policy(mut self, policy: Policy) -> Self {
+        self.policy = policy;
+        self
+    }
+
+    /// Time source for the waiting and pacing above. Tests pass a
+    /// [`FakeClock`](crate::policy::FakeClock) so that backing off costs nothing.
+    pub fn clock(mut self, clock: Arc<dyn Clock>) -> Self {
+        self.clock = Some(clock);
+        self
+    }
+
     pub fn build(self) -> Result<Client, Error> {
         let valid = |s: &str, min: usize, max: usize| {
             (min..=max).contains(&s.len()) && s.bytes().all(|b| b.is_ascii_alphabetic() || b == b'-')
@@ -171,16 +226,19 @@ impl ClientBuilder {
         if !valid(&self.hl, 2, 8) || !valid(&self.gl, 2, 2) {
             return Err(Error::InvalidRequest);
         }
+        self.policy.validate()?;
         let transport = match self.transport {
             Some(t) => t,
             None => Arc::new(ReqwestTransport::new(self.timeout, self.max_bytes)?),
         };
+        let clock = self.clock.unwrap_or_else(|| Arc::new(TokioClock::new()));
         Ok(Client(Arc::new(Inner {
             transport,
             hl: self.hl,
             gl: self.gl,
             timeout: self.timeout,
             max_bytes: self.max_bytes,
+            gate: Gate::new(self.policy, clock),
             state: RwLock::new(State { session: Session::new(), visitor_data: None }),
         })))
     }
@@ -194,7 +252,14 @@ impl Client {
             timeout: DEFAULT_TIMEOUT,
             max_bytes: DEFAULT_MAX_RESPONSE_BYTES,
             transport: None,
+            policy: Policy::polite(),
+            clock: None,
         }
+    }
+
+    /// The politeness limits this client obeys.
+    pub fn policy(&self) -> Policy {
+        self.0.gate.policy()
     }
 
     fn state<R>(&self, f: impl FnOnce(&mut State) -> R) -> R {
@@ -244,12 +309,8 @@ impl Client {
     /// a 2xx answer.
     pub async fn get_static(&self, url: &str) -> Result<Vec<u8>, Error> {
         validate_static_url(url)?;
-        let response = tokio::time::timeout(self.0.timeout, self.0.transport.get(url.to_owned()))
-            .await
-            .map_err(|_| Error::Network)??;
-        if !(200..300).contains(&response.status) {
-            return Err(Error::from_status(response.status, response.retry_after));
-        }
+        let attempt = Attempt::Get { transport: self.0.transport.clone(), url: url.to_owned() };
+        let response = self.0.gate.dispatch(attempt, self.0.timeout).await?;
         if response.body.len() > self.0.max_bytes {
             return Err(Error::TooLarge);
         }
@@ -293,12 +354,8 @@ impl Client {
             headers,
             body: serde_json::to_vec(&body).map_err(|_| Error::InvalidRequest)?,
         };
-        let response = tokio::time::timeout(self.0.timeout, self.0.transport.send(request))
-            .await
-            .map_err(|_| Error::Network)??;
-        if !(200..300).contains(&response.status) {
-            return Err(Error::from_status(response.status, response.retry_after));
-        }
+        let attempt = Attempt::Post { transport: self.0.transport.clone(), request };
+        let response = self.0.gate.dispatch(attempt, self.0.timeout).await?;
         if response.body.len() > self.0.max_bytes {
             return Err(Error::TooLarge);
         }

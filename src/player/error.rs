@@ -44,13 +44,14 @@ pub enum PlayerError {
 }
 
 impl From<PlayerError> for Error {
-    /// Lossy mapping into the transport error: sign-in needs become `Unauthenticated`, every other refusal
-    /// `Refused`, shape problems `Parse`, transport errors pass through.
+    /// Lossy mapping into the transport error: a bot challenge becomes [`Error::BotCheck`], a plain sign-in wall
+    /// `Unauthenticated`, every other refusal `Refused`, shape problems `Parse`, transport errors pass through.
     fn from(e: PlayerError) -> Error {
         match e {
             PlayerError::Transport(e) => e,
             PlayerError::InvalidId => Error::InvalidId,
-            PlayerError::LoginRequired { .. } => Error::Unauthenticated,
+            PlayerError::LoginRequired { bot_check: true } => Error::BotCheck,
+            PlayerError::LoginRequired { bot_check: false } => Error::Unauthenticated,
             PlayerError::AgeRestricted
             | PlayerError::Unplayable { .. }
             | PlayerError::Live
@@ -73,7 +74,8 @@ mod tests {
     fn conversions_and_messages() {
         assert_eq!(PlayerError::from(Error::Network), PlayerError::Transport(Error::Network));
         assert_eq!(Error::from(PlayerError::Transport(Error::TooLarge)), Error::TooLarge);
-        assert_eq!(Error::from(PlayerError::LoginRequired { bot_check: true }), Error::Unauthenticated);
+        assert_eq!(Error::from(PlayerError::LoginRequired { bot_check: true }), Error::BotCheck);
+        assert_eq!(Error::from(PlayerError::LoginRequired { bot_check: false }), Error::Unauthenticated);
         assert_eq!(Error::from(PlayerError::Live), Error::Refused);
         assert_eq!(Error::from(PlayerError::NeedsDecipher), Error::Parse);
         assert_eq!(PlayerError::UnsafeUrl.to_string(), "stream url rejected");

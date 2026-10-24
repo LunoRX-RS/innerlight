@@ -1,5 +1,7 @@
 //! Offline tests for `innerlight::youtube`. Fixtures are hand-written (`yt_handwritten_*`), not recordings.
 
+mod common;
+use common::builder;
 use innerlight::youtube::{Youtube, parse_playlist_page, parse_video_page};
 use innerlight::{Client, Error, FixtureTransport};
 use serde_json::{Value, json};
@@ -15,7 +17,7 @@ fn load(name: &str) -> Value {
 
 fn client(t: FixtureTransport, cookie: bool) -> (Client, Arc<FixtureTransport>) {
     let t = Arc::new(t);
-    let c = Client::builder().transport(t.clone()).build().unwrap();
+    let c = builder().transport(t.clone()).build().unwrap();
     if cookie {
         c.set_cookie("SAPISID=abc123; SID=x").unwrap();
     }

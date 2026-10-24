@@ -1,7 +1,9 @@
 //! Offline tests for `Youtube::search_videos`. The fixture is hand-written (`yt_handwritten_*`), not a recording.
 
+mod common;
+use common::builder;
 use innerlight::youtube::{Youtube, parse_video_page};
-use innerlight::{Client, Error, FixtureTransport};
+use innerlight::{Error, FixtureTransport};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -37,7 +39,7 @@ async fn search_videos_sends_an_anonymous_web_request_and_pages() {
             .with_match("search", "SEARCH2", json!({"responseContext": {}}))
             .with_file("search", fx("yt_handwritten_search_videos.json")),
     );
-    let c = Client::builder().transport(t.clone()).build().unwrap();
+    let c = builder().transport(t.clone()).build().unwrap();
     c.set_cookie("SAPISID=abc123; SID=x").unwrap();
     let yt = Youtube::new(&c);
     let p1 = yt.search_videos("  lofi beats ", None).await.unwrap();
@@ -58,7 +60,7 @@ async fn search_videos_sends_an_anonymous_web_request_and_pages() {
 #[tokio::test]
 async fn search_videos_validates_before_sending_and_maps_errors() {
     let t = Arc::new(FixtureTransport::new().with_raw("search", 429, b"{}"));
-    let c = Client::builder().transport(t.clone()).build().unwrap();
+    let c = builder().transport(t.clone()).build().unwrap();
     let yt = Youtube::new(&c);
     for bad in ["", "   ", "tab\there", &"x".repeat(513)] {
         assert_eq!(yt.search_videos(bad, None).await.unwrap_err(), Error::InvalidRequest, "{bad:?}");

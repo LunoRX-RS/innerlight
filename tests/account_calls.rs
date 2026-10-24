@@ -1,5 +1,7 @@
 //! Offline tests for `innerlight::account`: exact endpoints and bodies, auth gate, error mapping.
 
+mod common;
+use common::builder;
 use innerlight::account::{Account, Privacy};
 use innerlight::{Client, Error, FixtureTransport};
 use serde_json::json;
@@ -17,7 +19,7 @@ fn fx(name: &str) -> String {
 fn setup(endpoints: &[&str], file: &str, cookie: bool) -> (Client, Arc<FixtureTransport>) {
     let t = endpoints.iter().fold(FixtureTransport::new(), |t, e| t.with_file(e, fx(file)));
     let t = Arc::new(t);
-    let c = Client::builder().transport(t.clone()).build().unwrap();
+    let c = builder().transport(t.clone()).build().unwrap();
     if cookie {
         c.set_cookie("SAPISID=abc123; SID=x").unwrap();
     }
@@ -162,7 +164,7 @@ async fn missing_response_context_or_non_object_is_parse_error() {
     assert_eq!(Account::new(&c).like_video(VID).await, Err(Error::Parse));
     for body in [&b"[]"[..], b"null", b"\"ok\"", b"not json"] {
         let t = Arc::new(FixtureTransport::new().with_raw("like/like", 200, body));
-        let c = Client::builder().transport(t).build().unwrap();
+        let c = builder().transport(t).build().unwrap();
         c.set_cookie("SAPISID=abc123").unwrap();
         assert_eq!(Account::new(&c).like_video(VID).await, Err(Error::Parse));
     }
@@ -170,9 +172,9 @@ async fn missing_response_context_or_non_object_is_parse_error() {
 
 #[tokio::test]
 async fn http_failures_pass_through_the_transport_mapping() {
-    for (status, want) in [(401u16, Error::Unauthenticated), (403, Error::Refused), (500, Error::Network)] {
+    for (status, want) in [(401u16, Error::Unauthenticated), (403, Error::Refused), (500, Error::ServerError)] {
         let t = Arc::new(FixtureTransport::new().with_raw("like/like", status, b"{}"));
-        let c = Client::builder().transport(t).build().unwrap();
+        let c = builder().transport(t).build().unwrap();
         c.set_cookie("SAPISID=abc123").unwrap();
         assert_eq!(Account::new(&c).like_video(VID).await, Err(want));
     }
