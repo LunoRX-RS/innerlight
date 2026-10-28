@@ -318,3 +318,69 @@ fn builder_rejects_politeness_settings_that_could_deadlock_or_spin() {
     }
     assert_eq!(Client::builder().policy(Policy::no_retry()).build().unwrap().policy().attempts, 1);
 }
+
+#[tokio::test]
+async fn user_agent_is_fixed_and_names_this_library() {
+    let (c, fx) = client_with(FixtureTransport::new().with("browse", json!({})).with("next", json!({})));
+    c.post(ClientKind::Web, "browse", json!({})).await.unwrap();
+    c.post(ClientKind::WebMusic, "next", json!({})).await.unwrap();
+    let reqs = fx.requests();
+    let ua = reqs[0].header("user-agent").unwrap();
+    assert!(ua.starts_with("innerlight/") && !ua.contains("Mozilla"), "{ua}");
+    assert_eq!(reqs[1].header("user-agent"), Some(ua), "never rotated");
+}
+
+#[tokio::test]
+async fn no_proof_of_origin_token_is_ever_sent_and_a_challenge_waits_zero() {
+    let fx = Arc::new(FixtureTransport::new().with_raw(
+        "player",
+        403,
+        br#"{"error":{"message":"Sign in to confirm you're not a bot"}}"#,
+    ));
+    let (b, clock) = builder_with_clock();
+    let c = b.transport(fx.clone()).build().unwrap();
+    assert_eq!(c.post(ClientKind::Web, "player", json!({"videoId": "dQw4w9WgXcQ"})).await, Err(Error::BotCheck));
+    let reqs = fx.requests();
+    assert_eq!(reqs.len(), 1);
+    assert_eq!(clock.elapsed_ms(), 0, "a challenge is not waited out");
+    let wire = format!("{:?}{}", reqs[0].headers, reqs[0].body).to_ascii_lowercase();
+    assert!(
+        !wire.contains("potoken") && !wire.contains("po_token") && !wire.contains("serviceintegritydimensions"),
+        "{wire}"
+    );
+}
+
+#[tokio::test]
+async fn a_caller_chosen_user_agent_is_sent_as_given_and_validated() {
+    let fx = Arc::new(FixtureTransport::new().with("browse", json!({})));
+    let c = builder().user_agent("LunoRX/1.4 (+https://example.org)").transport(fx.clone()).build().unwrap();
+    c.post(ClientKind::Web, "browse", json!({})).await.unwrap();
+    c.post(ClientKind::Web, "browse", json!({})).await.unwrap();
+    for r in fx.requests() {
+        assert_eq!(r.header("user-agent"), Some("LunoRX/1.4 (+https://example.org)"));
+    }
+    for bad in ["", "a\r\nX-Evil: 1", "caf\u{e9}", &"x".repeat(201)] {
+        assert_eq!(builder().user_agent(bad).build().err(), Some(Error::InvalidRequest), "{bad:?}");
+    }
+}
+
+/// A clock whose waits never finish, so a retry parked on a backoff can be cancelled by dropping the call.
+struct Stuck;
+impl innerlight::Clock for Stuck {
+    fn now_ms(&self) -> u64 {
+        0
+    }
+    fn sleep_ms(&self, _: u64) -> BoxFuture<'_, ()> {
+        Box::pin(std::future::pending())
+    }
+}
+
+#[tokio::test]
+async fn a_cancelled_call_sends_nothing_more() {
+    let fx = Arc::new(FixtureTransport::new().with_raw("browse", 503, b"oops"));
+    let c = Client::builder().clock(Arc::new(Stuck)).transport(fx.clone()).build().unwrap();
+    let call = c.post(ClientKind::Web, "browse", json!({}));
+    assert!(tokio::time::timeout(Duration::from_millis(100), call).await.is_err(), "parked on the backoff");
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    assert_eq!(fx.requests().len(), 1, "dropped while waiting: the retry is never sent");
+}

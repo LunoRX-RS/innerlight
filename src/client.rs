@@ -17,8 +17,9 @@ pub mod versions {
     pub const WEB_MUSIC_NAME: &str = "WEB_REMIX";
     pub const WEB_MUSIC_VERSION: &str = "1.20251020.03.00";
     pub const WEB_MUSIC_ID: &str = "67";
-    /// One fixed desktop browser User-Agent, sent on every request. It is never rotated.
-    pub const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+    /// One fixed, truthful User-Agent naming this library, sent on every request. It is never rotated.
+    pub const USER_AGENT: &str =
+        concat!("innerlight/", env!("CARGO_PKG_VERSION"), " (+https://github.com/LunoRX-RS/innerlight)");
 }
 
 /// Which site front end the request pretends to come from: the standard web clients, nothing else.
@@ -114,6 +115,7 @@ struct Inner {
     timeout: Duration,
     max_bytes: usize,
     gate: Gate,
+    user_agent: String,
     state: RwLock<State>,
 }
 
@@ -135,12 +137,21 @@ pub struct ClientBuilder {
     transport: Option<Arc<dyn Transport>>,
     policy: Policy,
     clock: Option<Arc<dyn Clock>>,
+    user_agent: Option<String>,
 }
 
 impl ClientBuilder {
     /// UI language, e.g. `en`. Default `en`.
     pub fn language(mut self, hl: &str) -> Self {
         self.hl = hl.to_owned();
+        self
+    }
+
+    /// One fixed `User-Agent` for every request this client sends, e.g. `MyApp/1.4 (+https://example.org)`. It is
+    /// sent as given and never rotated or randomised. Default: `versions::USER_AGENT`. Rejected at `build` when empty,
+    /// over 200 bytes, or holding anything but printable ASCII.
+    pub fn user_agent(mut self, user_agent: &str) -> Self {
+        self.user_agent = Some(user_agent.to_owned());
         self
     }
 
@@ -227,9 +238,13 @@ impl ClientBuilder {
             return Err(Error::InvalidRequest);
         }
         self.policy.validate()?;
+        let user_agent = self.user_agent.unwrap_or_else(|| versions::USER_AGENT.to_owned());
+        if user_agent.is_empty() || user_agent.len() > 200 || !user_agent.bytes().all(|b| (0x20..0x7f).contains(&b)) {
+            return Err(Error::InvalidRequest);
+        }
         let transport = match self.transport {
             Some(t) => t,
-            None => Arc::new(ReqwestTransport::new(self.timeout, self.max_bytes)?),
+            None => Arc::new(ReqwestTransport::new(self.timeout, self.max_bytes)?.with_user_agent(&user_agent)),
         };
         let clock = self.clock.unwrap_or_else(|| Arc::new(TokioClock::new()));
         Ok(Client(Arc::new(Inner {
@@ -239,6 +254,7 @@ impl ClientBuilder {
             timeout: self.timeout,
             max_bytes: self.max_bytes,
             gate: Gate::new(self.policy, clock),
+            user_agent,
             state: RwLock::new(State { session: Session::new(), visitor_data: None }),
         })))
     }
@@ -254,6 +270,7 @@ impl Client {
             transport: None,
             policy: Policy::polite(),
             clock: None,
+            user_agent: None,
         }
     }
 
@@ -317,7 +334,24 @@ impl Client {
         Ok(response.body)
     }
 
-    async fn send(&self, kind: ClientKind, endpoint: &str, mut body: Value, authed: bool) -> Result<Value, Error> {
+    /// Like [`post_authed`](Self::post_authed) but sent exactly once, for edits that change the account (like,
+    /// subscribe, playlist edits). A timeout or `5xx` leaves it unknown whether the edit applied, so it is never resent.
+    pub(crate) async fn post_authed_once(&self, kind: ClientKind, endpoint: &str, body: Value) -> Result<Value, Error> {
+        self.send_with(kind, endpoint, body, true, false).await
+    }
+
+    async fn send(&self, kind: ClientKind, endpoint: &str, body: Value, authed: bool) -> Result<Value, Error> {
+        self.send_with(kind, endpoint, body, authed, true).await
+    }
+
+    async fn send_with(
+        &self,
+        kind: ClientKind,
+        endpoint: &str,
+        mut body: Value,
+        authed: bool,
+        retry: bool,
+    ) -> Result<Value, Error> {
         validate_endpoint(endpoint)?;
         let obj = body.as_object_mut().ok_or(Error::InvalidRequest)?;
         let (visitor, auth) = self.state(|s| {
@@ -333,7 +367,7 @@ impl Client {
 
         let mut headers = vec![
             ("Content-Type".to_owned(), "application/json".to_owned()),
-            ("User-Agent".to_owned(), versions::USER_AGENT.to_owned()),
+            ("User-Agent".to_owned(), self.0.user_agent.clone()),
             ("Accept-Language".to_owned(), self.0.hl.clone()),
             ("X-Youtube-Client-Name".to_owned(), kind.id().to_owned()),
             ("X-Youtube-Client-Version".to_owned(), kind.version().to_owned()),
@@ -355,7 +389,11 @@ impl Client {
             body: serde_json::to_vec(&body).map_err(|_| Error::InvalidRequest)?,
         };
         let attempt = Attempt::Post { transport: self.0.transport.clone(), request };
-        let response = self.0.gate.dispatch(attempt, self.0.timeout).await?;
+        let response = if retry {
+            self.0.gate.dispatch(attempt, self.0.timeout).await?
+        } else {
+            self.0.gate.dispatch_once(attempt, self.0.timeout).await?
+        };
         if response.body.len() > self.0.max_bytes {
             return Err(Error::TooLarge);
         }

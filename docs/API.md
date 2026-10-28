@@ -77,7 +77,7 @@ let client = Client::builder()
   `https://music.youtube.com/...` for `ClientKind::WebMusic`. HTTPS only, redirects are not followed.
 - Context sent: `{"client": {"clientName", "clientVersion", "hl", "gl", "visitorData"?}, "user": {"lockedSafetyMode": false}}`.
   `Web` = `WEB`, `WebMusic` = `WEB_REMIX`. Version strings live in `client::versions` (one place to update); they are unverified against the live site.
-- Headers: `Content-Type`, one fixed `User-Agent` (`versions::USER_AGENT`, never rotated), `Accept-Language`, `X-Youtube-Client-Name`,
+- Headers: `Content-Type`, one fixed, truthful `User-Agent` (`versions::USER_AGENT`, `innerlight/<version> (+repo URL)`, never rotated), `Accept-Language`, `X-Youtube-Client-Name`,
   `X-Youtube-Client-Version`, `Origin`, and `X-Goog-Visitor-Id` when visitor data is known. `post_authed` adds `Cookie`, `Authorization`
   (`SAPISIDHASH`), `X-Origin`, `X-Goog-AuthUser: 0`.
 - Visitor data: if none is set, the first successful response's `responseContext.visitorData` is stored and sent from then on.

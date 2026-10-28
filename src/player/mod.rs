@@ -28,6 +28,23 @@ pub trait Decipher: Send + Sync {
     fn throttle_fix(&self, url: &str) -> Result<String, PlayerError>;
 }
 
+/// Where a proof-of-origin (PO) token comes from. **This crate never makes one.** The host app supplies it, for
+/// example from the user's own real browser session, and owns the questions this crate cannot answer: how it was
+/// obtained, how long it lives, which video and session it is valid for. See `docs/PLAYBACK.md`.
+///
+/// The token is attached to the one `player` request and nothing else: not stored, not logged, not sent to any other
+/// origin, not retried with a different client when the service still challenges.
+pub trait PoTokenSource: Send + Sync {
+    /// The token for `video_id`, or `None` to send the request without one.
+    fn token_for(&self, video_id: &str) -> Option<String>;
+}
+
+/// A token is opaque base64 text. Anything else is refused before sending, so a bad value can never inject into the body.
+fn plausible_po_token(t: &str) -> bool {
+    (16..=4096).contains(&t.len())
+        && t.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'=' | b'+' | b'/'))
+}
+
 /// What to ask for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ResolveOptions {
@@ -50,6 +67,7 @@ impl Default for ResolveOptions {
 pub struct Player<'a> {
     client: &'a Client,
     decipher: Option<Arc<dyn Decipher>>,
+    po_token: Option<Arc<dyn PoTokenSource>>,
 }
 
 impl std::fmt::Debug for Player<'_> {
@@ -115,7 +133,7 @@ fn finish(stream: &Stream, decipher: Option<&dyn Decipher>) -> Result<(String, b
 
 impl<'a> Player<'a> {
     pub fn new(client: &'a Client) -> Self {
-        Self { client, decipher: None }
+        Self { client, decipher: None, po_token: None }
     }
 
     /// Supplies the implementation that handles ciphered streams and throttling.
@@ -124,12 +142,24 @@ impl<'a> Player<'a> {
         self
     }
 
+    /// Supplies PO tokens from the host app. Without it no token is ever sent.
+    pub fn with_po_token_source(mut self, source: Arc<dyn PoTokenSource>) -> Self {
+        self.po_token = Some(source);
+        self
+    }
+
     /// One `player` request, then [`Player::resolve_response`]. `InvalidId` (nothing sent) for a bad id.
     pub async fn resolve(&self, video_id: &str, opts: ResolveOptions) -> Result<Resolved, PlayerError> {
         if !ids::is_video_id(video_id) {
             return Err(PlayerError::InvalidId);
         }
-        let body = request_body(video_id, opts.signature_timestamp);
+        let mut body = request_body(video_id, opts.signature_timestamp);
+        if let Some(token) = self.po_token.as_ref().and_then(|s| s.token_for(video_id)) {
+            if !plausible_po_token(&token) {
+                return Err(PlayerError::InvalidPoToken);
+            }
+            body["serviceIntegrityDimensions"] = json!({"poToken": token});
+        }
         let v = if opts.authed {
             self.client.post_authed(opts.kind, "player", body).await?
         } else {

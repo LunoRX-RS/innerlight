@@ -67,7 +67,7 @@ impl<'a> Account<'a> {
     }
 
     async fn call(&self, endpoint: &str, body: Value) -> Result<Value, Error> {
-        let v = self.client.post_authed(ClientKind::Web, endpoint, body).await?;
+        let v = self.client.post_authed_once(ClientKind::Web, endpoint, body).await?;
         check(&v)?;
         Ok(v)
     }

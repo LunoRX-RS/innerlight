@@ -41,6 +41,10 @@ pub enum PlayerError {
     /// A stream URL failed [`check_stream_url`](super::check_stream_url).
     #[error("stream url rejected")]
     UnsafeUrl,
+    /// The caller's [`PoTokenSource`](super::PoTokenSource) returned something that is not a plausible token.
+    /// Nothing was sent. The value is never echoed.
+    #[error("proof-of-origin token rejected before sending")]
+    InvalidPoToken,
 }
 
 impl From<PlayerError> for Error {
@@ -52,6 +56,7 @@ impl From<PlayerError> for Error {
             PlayerError::InvalidId => Error::InvalidId,
             PlayerError::LoginRequired { bot_check: true } => Error::BotCheck,
             PlayerError::LoginRequired { bot_check: false } => Error::Unauthenticated,
+            PlayerError::InvalidPoToken => Error::InvalidRequest,
             PlayerError::AgeRestricted
             | PlayerError::Unplayable { .. }
             | PlayerError::Live

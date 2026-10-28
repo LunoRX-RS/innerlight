@@ -179,3 +179,12 @@ async fn http_failures_pass_through_the_transport_mapping() {
         assert_eq!(Account::new(&c).like_video(VID).await, Err(want));
     }
 }
+
+#[tokio::test]
+async fn an_account_edit_is_sent_once_even_when_the_service_errors() {
+    let t = Arc::new(FixtureTransport::new().with_raw("like/like", 503, b"oops"));
+    let c = builder().transport(t.clone()).build().unwrap();
+    c.set_cookie("SAPISID=abc123; SID=x").unwrap();
+    assert_eq!(Account::new(&c).like_video(VID).await, Err(Error::ServerError));
+    assert_eq!(t.requests().len(), 1, "the edit may have applied: resending it blindly could apply it twice");
+}

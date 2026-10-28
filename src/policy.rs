@@ -261,6 +261,16 @@ impl Gate {
     /// a call parked on a `Retry-After` does not occupy a slot. A wait that would overshoot the budget is not
     /// truncated into an early send: the retrying stops and the error is returned.
     pub(crate) async fn dispatch(&self, attempt: Attempt, timeout: Duration) -> Result<Response, Error> {
+        self.dispatch_up_to(attempt, timeout, self.policy.attempts).await
+    }
+
+    /// One send, never repeated, for an account mutation: after a timeout or `5xx` the first attempt may already have
+    /// taken effect, so resending it blindly could apply it twice. The caller reports the error and decides.
+    pub(crate) async fn dispatch_once(&self, attempt: Attempt, timeout: Duration) -> Result<Response, Error> {
+        self.dispatch_up_to(attempt, timeout, 1).await
+    }
+
+    async fn dispatch_up_to(&self, attempt: Attempt, timeout: Duration, max_sends: u8) -> Result<Response, Error> {
         let policy = self.policy;
         let start = self.clock.now_ms();
         let budget = policy.total_budget.as_millis() as u64;
@@ -281,7 +291,7 @@ impl Gate {
                 Ok(Err(error)) => error,
                 Err(_) => Error::Timeout,
             };
-            if !error.is_retryable() || sends >= policy.attempts {
+            if !error.is_retryable() || sends >= max_sends {
                 return Err(error);
             }
             let spent = self.clock.now_ms().saturating_sub(start);

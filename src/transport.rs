@@ -111,19 +111,30 @@ pub trait Transport: Send + Sync + 'static {
 pub struct ReqwestTransport {
     http: reqwest::Client,
     max_bytes: usize,
+    user_agent: String,
 }
 
 impl ReqwestTransport {
     pub fn new(timeout: Duration, max_response_bytes: usize) -> Result<Self, Error> {
+        Self::build(timeout, max_response_bytes, true)
+    }
+
+    fn build(timeout: Duration, max_response_bytes: usize, https_only: bool) -> Result<Self, Error> {
         let http = reqwest::Client::builder()
             .timeout(timeout)
             .connect_timeout(timeout)
             .redirect(reqwest::redirect::Policy::none())
-            .https_only(true)
+            .https_only(https_only)
             .gzip(true)
             .build()
             .map_err(|_| Error::Network)?;
-        Ok(Self { http, max_bytes: max_response_bytes })
+        Ok(Self { http, max_bytes: max_response_bytes, user_agent: crate::client::versions::USER_AGENT.to_owned() })
+    }
+
+    /// The fixed `User-Agent` sent on `get`. The caller (`ClientBuilder::build`) has validated it.
+    pub(crate) fn with_user_agent(mut self, user_agent: &str) -> Self {
+        self.user_agent = user_agent.to_owned();
+        self
     }
 }
 
@@ -162,13 +173,8 @@ impl Transport for ReqwestTransport {
 
 impl ReqwestTransport {
     async fn fetch(&self, url: &str) -> Result<Response, Error> {
-        let mut resp = self
-            .http
-            .get(url)
-            .header("User-Agent", crate::client::versions::USER_AGENT)
-            .send()
-            .await
-            .map_err(|_| Error::Network)?;
+        let mut resp =
+            self.http.get(url).header("User-Agent", &self.user_agent).send().await.map_err(|_| Error::Network)?;
         let status = resp.status().as_u16();
         let retry_after = resp
             .headers()
@@ -410,5 +416,34 @@ mod tests {
         assert_eq!(leap("Wed, 28 Feb 2024 00:00:00 GMT"), Some(Duration::from_secs(86_400)));
         assert_eq!(leap("Thu, 29 Feb 2024 00:00:00 GMT"), Some(Duration::from_secs(2 * 86_400)));
         assert_eq!(leap("Fri, 01 Mar 2024 00:00:00 GMT"), Some(Duration::from_secs(3 * 86_400)));
+    }
+
+    /// Plain-http loopback only so the test needs no TLS server; production `new` is always https-only.
+    #[tokio::test]
+    async fn a_redirect_is_returned_not_followed() {
+        use std::io::{Read, Write};
+        use std::net::TcpListener;
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let target = TcpListener::bind("127.0.0.1:0").unwrap();
+        target.set_nonblocking(true).unwrap();
+        let target_url = format!("http://{}/stolen", target.local_addr().unwrap());
+        let first = TcpListener::bind("127.0.0.1:0").unwrap();
+        let first_url = format!("http://{}/", first.local_addr().unwrap());
+        let served = Arc::new(AtomicUsize::new(0));
+        let counter = served.clone();
+        std::thread::spawn(move || {
+            let (mut conn, _) = first.accept().unwrap();
+            let mut buf = [0u8; 2048];
+            let _ = conn.read(&mut buf);
+            counter.fetch_add(1, Ordering::SeqCst);
+            let reply = format!("HTTP/1.1 302 Found\r\nLocation: {target_url}\r\nContent-Length: 0\r\n\r\n");
+            conn.write_all(reply.as_bytes()).unwrap();
+        });
+        let t = ReqwestTransport::build(Duration::from_secs(5), 1 << 16, false).unwrap();
+        let resp = t.get(first_url).await.unwrap();
+        assert_eq!(resp.status, 302, "the redirect itself is the answer");
+        assert_eq!(served.load(Ordering::SeqCst), 1);
+        assert!(target.accept().is_err(), "nothing connected to the redirect target");
     }
 }
