@@ -97,6 +97,11 @@ pub(crate) fn resolve(
     if roots.is_empty() {
         return Err(fail);
     }
+    if std::env::var_os("INNERLIGHT_DECIPHER_DEBUG").is_some() {
+        for c in &cands {
+            eprintln!("[decipher] {which}: candidate {} via {}", c.template, c.how);
+        }
+    }
     let mut last: Option<Arc<Sandbox>> = None;
     let mut prev_units = 0usize;
     for depth in 0..=MAX_DEPTH {
