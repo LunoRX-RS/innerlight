@@ -51,6 +51,15 @@ fn variant_m_multiplexed_dispatcher() {
 }
 
 #[test]
+fn variant_n_selector_reached_only_through_computed_arguments() {
+    let d = decipher(SCRIPT_N);
+    assert_eq!(d.found_by(), ("helper-dispatcher", "marker-in-string-table"));
+    assert_eq!(d.signature(SIG_IN).unwrap(), ref_sig_m(SIG_IN));
+    assert_eq!(d.throttle_value("ThrottleN251").unwrap(), ref_n_n("ThrottleN251"));
+    assert_eq!(script(SCRIPT_N).signature_timestamp(), Ok(20600));
+}
+
+#[test]
 fn variant_m_brute_force_when_no_marker() {
     let js = script_m_without_marker();
     let d = decipher(&js);

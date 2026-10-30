@@ -253,6 +253,9 @@ pub(crate) fn signature_candidates(idx: &Index) -> Vec<Candidate> {
     out
 }
 
+/// Selectors `0..SELECTOR_SCAN` are proposed for a dispatcher whose call sites do not name the branch of the `n` transform.
+const SELECTOR_SCAN: u32 = 64;
+
 fn is_failure_marker(s: &str) -> bool {
     let id_chars = |t: &str| t.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-');
     (s.starts_with("enhanced_except_") && s.ends_with('_') && id_chars(s))
@@ -333,6 +336,17 @@ pub(crate) fn throttle_candidates(idx: &Index) -> (Vec<Candidate>, Vec<BruteTarg
             let mut sels = selectors(idx, &d);
             if !sels.contains(&1) {
                 sels.push(1);
+            }
+            // The marker read sits in a `catch` block: the transform's failure path. The branch that holds it is
+            // chosen by low bits of the selector, and a player can reach it only through computed arguments
+            // (`D(l^6508,l^2395,..)`), so no call site names it. Every small selector is proposed after the ones the
+            // script uses; the probe keeps only a branch that behaves like the transform.
+            if (i.saturating_sub(12)..i).any(|k| idx.text(k) == "catch") {
+                for a in 0..SELECTOR_SCAN {
+                    if !sels.contains(&a) {
+                        sels.push(a);
+                    }
+                }
             }
             for &m in &marks {
                 let e = k ^ m;

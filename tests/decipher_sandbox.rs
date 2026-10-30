@@ -22,6 +22,21 @@ fn types_are_send_and_sync() {
 }
 
 #[test]
+fn many_failed_calls_do_not_make_a_correct_call_fail() {
+    // Probing a script tries hundreds of wrong candidates in one sandbox; each ends in a thrown error from a nested
+    // call. The next correct call must still work.
+    let s = Sandbox::new(
+        "function deep(n){if(n==0)throw new TypeError('x');return deep(n-1)+1}function ok(a){return a+'!'}",
+        SandboxLimits::default(),
+    )
+    .unwrap();
+    for _ in 0..400 {
+        assert!(s.call("deep(40)+__a", "x").is_err());
+    }
+    assert_eq!(s.call("ok(__a)", "fine").unwrap(), "fine!");
+}
+
+#[test]
 fn infinite_loops_hit_the_limits_and_the_sandbox_recovers() {
     let s = sb();
     for code in ["while(true){}", "for(;;){}", "do{}while(1)", "var i=0;while(i>=0){i++}"] {
