@@ -10,6 +10,7 @@
 use super::DecipherError;
 use boa_engine::error::{EngineError, RuntimeLimitError};
 use boa_engine::{Context, JsError, JsString, Source, js_string};
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::mpsc::{self, RecvTimeoutError, Sender, SyncSender};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -69,7 +70,14 @@ pub struct Sandbox {
     program: Arc<str>,
     limits: SandboxLimits,
     worker: Mutex<Option<Worker>>,
+    /// Calls that ended in an error since the context was built; see [`CONTEXT_REFRESH_AFTER`].
+    failures: AtomicU32,
 }
+
+/// The engine does not give back every stack slot of a call that ends in a thrown error. After enough of them even
+/// a correct call reports "maximum stack size". Probing a script tries hundreds of wrong candidates in one sandbox,
+/// so a context that has seen this many failed calls is rebuilt from the program before the next call.
+const CONTEXT_REFRESH_AFTER: u32 = 8;
 
 impl std::fmt::Debug for Sandbox {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -154,7 +162,7 @@ impl Sandbox {
     /// Evaluates `program` (strict mode is the program's own business) in a fresh context. The program must only
     /// define things; `Err` when it throws, exceeds a budget or does not finish within the load timeout.
     pub fn new(program: &str, limits: SandboxLimits) -> Result<Sandbox, DecipherError> {
-        let sb = Sandbox { program: Arc::from(program), limits, worker: Mutex::new(None) };
+        let sb = Sandbox { program: Arc::from(program), limits, worker: Mutex::new(None), failures: AtomicU32::new(0) };
         let w = sb.spawn()?;
         *sb.worker.lock().unwrap_or_else(|e| e.into_inner()) = Some(w);
         Ok(sb)
@@ -180,7 +188,11 @@ impl Sandbox {
 
     fn run(&self, code: String, arg: Option<String>, strict_string: bool) -> Result<String, DecipherError> {
         let mut guard = self.worker.lock().unwrap_or_else(|e| e.into_inner());
+        if self.failures.load(Ordering::Relaxed) >= CONTEXT_REFRESH_AFTER {
+            *guard = None;
+        }
         if guard.is_none() {
+            self.failures.store(0, Ordering::Relaxed);
             *guard = Some(self.spawn()?);
         }
         let Some(worker) = guard.as_ref() else { return Err(DecipherError::SandboxFailed) };
@@ -190,7 +202,12 @@ impl Sandbox {
             return Err(DecipherError::SandboxFailed);
         }
         match answer.recv_timeout(self.limits.call_timeout) {
-            Ok(r) => r,
+            Ok(r) => {
+                if r.is_err() {
+                    self.failures.fetch_add(1, Ordering::Relaxed);
+                }
+                r
+            }
             Err(RecvTimeoutError::Timeout) => {
                 // Abandon the context: the stuck thread ends when the engine's own loop budget runs out.
                 *guard = None;

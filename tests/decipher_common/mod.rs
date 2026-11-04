@@ -98,6 +98,31 @@ g.Z=function(u){return D(72,1500,u)};
 var k={signatureTimestamp:20500};
 })(_yt_player);"#;
 
+/// Multiplexed, the 2026-10-30 shape: the signature is `D(16,1453,s)` as in `SCRIPT_M`, but the `n` dispatcher `W` runs
+/// several guarded branches one after the other, so a wrong selector throws (`d` is undefined) and the `n` branch is
+/// reached only with a selector from 27 to 31. No call site names it: `g.Y` computes both arguments. The failure
+/// marker is read in a `catch` as `T[e^1239]+c`.
+pub const SCRIPT_N: &str = r#"var _yt_player={};(function(g){var window=this;'use strict';
+var T="local;splice;reverse;length;1;7Qm2ZkYw1x_w8_;n".split(";");
+var H={Q1:function(a,b){a[T[1]](0,b)},R2:function(a){a[T[2]]()},S3:function(a,b){var c=a[0];a[0]=a[b%a[T[3]]];a[b%a[T[3]]]=c}};
+var D=function(a,b,c){var e=b^a,h;
+if(a==16){var f=c.split("");H.R2(f,1);H.S3(f,e%7);H.Q1(f,3);H.S3(f,4);h=f.join("")}
+return h};
+var W=function(a,b,c,d){var e=b^a,m;
+if((a^50)<23&&(a>>2&15)>=5){m=d[T[3]]}
+(a+5^30)<a&&(a-2|42)>=a&&(c=c%d[T[3]]);
+if((a^26)<14&&a+2>>3>=2){try{var k=c.split("");for(var i=0;i<k.length;i++)k[i]=String.fromCharCode(97+(k[i].charCodeAt(0)+e+i)%26);m=k.join("")}catch(x){m=T[e^1239]+c}}
+(a&110)==a&&d[T[3]]!=0&&(c=0);
+return m};
+g.X=function(s){return D(16,1453,s)};
+g.Y=function(u,n){var q=7;u.set("n",W(q^20,q^1217,n))};
+var k={signatureTimestamp:20600};
+})(_yt_player);"#;
+
+pub fn ref_n_n(s: &str) -> String {
+    s.chars().enumerate().map(|(i, ch)| char::from_u32(97 + (ch as u32 + 1234 + i as u32) % 26).unwrap()).collect()
+}
+
 /// Same dispatcher but the string table has no failure marker: only the brute-force stage can find `n`.
 pub fn script_m_without_marker() -> String {
     SCRIPT_M.replace("1ZzQ9xYw_w8_", "plain")

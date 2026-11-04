@@ -72,7 +72,7 @@ Heuristics today (a candidate may come from any of them):
 | signature | `decode-call-site` | `F(decodeURIComponent(` / `F[N](decodeURIComponent(` |
 | signature | `sp-call-site` | after a `.sp` read, the call `F(A,B,G(C,D,` |
 | `n` | `marker-in-function` | a function unit holding the failure-marker string (`enhanced_except_..._`, or `..._w8_`) |
-| `n` | `marker-in-string-table` | the marker inside a `T="a;b;c".split(";")` table and a read `T[e^K]+x`: `e = K ^ index(marker)`, then `D(A, A^e, __a)` for every first argument `A` seen at `D(` call sites |
+| `n` | `marker-in-string-table` | the marker inside a `T="a;b;c".split(";")` table and a read `T[e^K]+x`: `e = K ^ index(marker)`, then `D(A, A^e, __a)` for every first argument `A` seen at `D(` call sites. When the read sits in a `catch` block (the failure path), every selector `A` in `0..64` is proposed too, after the ones the script uses: the player of 2026-10-30 reaches the `n` branch only through computed arguments, so no call site names the selector |
 | `n` | `get-n-call-site` | `.get("n")` / `.get(String.fromCharCode(110))` followed by `F(x)` or `F[N](x)` |
 | `n` | `split-join-try-shape` | the six biggest function units containing `split`, `join`, `try`, `catch` |
 | `n` | `brute-force` (last resort) | dispatchers shaped `function(a,b,..){var e=b^a;..try..}`: every selector seen at call sites x `b` in `0..4096`, 20 s budget |
@@ -103,7 +103,13 @@ channel. The argument is bound to a global (`__a`) as data, never spliced into c
 per call (a stuck context is abandoned and rebuilt from the program; its thread ends when the engine's loop budget runs out),
 3 000 000 loop iterations per call frame, call depth 256, results at most 8192 UTF-16 units. `String#repeat`, `padStart`, `padEnd`
 and `Array#join` are capped at 1 Mi so one call cannot allocate without bound. **Boa has no memory ceiling**; those caps are
-best effort, not a guarantee. Tests: `tests/decipher_sandbox.rs`.
+best effort, not a guarantee. Boa also does not give back every stack slot of a call that ends in a thrown error, so after 8
+failed calls a sandbox rebuilds its context from the program before the next call (probing tries hundreds of wrong candidates;
+without this, a correct candidate late in the list fails with "maximum stack size"). Tests: `tests/decipher_sandbox.rs`.
+
+A multiplexed dispatcher can hold several guarded branches that run one after another (`if(guard1){..}guard2&&(..);if(guard3){n branch}`).
+A wrong selector then runs a neighbouring branch and throws on an undefined argument; the right one satisfies only its own guard
+(the 2026-10-30 player: selector 27 to 31). The probe tells them apart by behaviour, never by reading the guards.
 
 ## What breaks when the script changes
 
